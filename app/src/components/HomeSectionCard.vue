@@ -11,6 +11,7 @@
                     @click="toggle"
                 >
                     <v-icon
+                        v-if="sortable"
                         class="home-section-card-handle mr-1"
                         draggable="true"
                         :title="$t('common.dragToReorder')"
@@ -58,6 +59,10 @@ export default {
         defaultExpanded: {
             type: Boolean,
             default: true,
+        },
+        sortable: {
+            type: Boolean,
+            default: false,
         },
         // 由父页面在拖拽经过本卡片时置 true，用于显示放置目标的视觉反馈
         dragOver: {
