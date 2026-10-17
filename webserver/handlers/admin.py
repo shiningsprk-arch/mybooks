@@ -43,6 +43,7 @@ from webserver.models import Reader, Item, Authors, Reading, BookReview, Message
 from webserver.services.book_review_service import BookReviewService
 from webserver.base.formatter import SimpleBookFormatter
 from webserver.base.setting_saver import ADMIN_SETTING_KEYS, SettingsSaver
+from webserver.base.homepage import homepage_from_legacy, normalize_homepage
 from webserver.base.trash_manager import TrashManager
 from webserver.version import VERSION
 from webserver.handlers.audio import AudioUtils
@@ -459,6 +460,9 @@ class AdminSettings(BaseHandler):
         if not CONF.get("SIDEBAR_ITEMS", []):
             CONF["SIDEBAR_ITEMS"] = ["audiobooks", "printbooks", "publishers", "folders", "tags", "series", "languages", "rating", "memo", "categories"]
 
+        raw_homepage = CONF.get("HOMEPAGE_CONFIG")
+        homepage_config = normalize_homepage(raw_homepage) if raw_homepage else homepage_from_legacy(CONF)
+
         CONF["site_icon"] = "favicon_0"  # default icon, means use current favicon.ico
         CONF["META_ALL_SOURCES"] = BookSearch.all_sources()
 
@@ -484,6 +488,7 @@ class AdminSettings(BaseHandler):
             },
         ]
         settings = dict(CONF)
+        settings["HOMEPAGE_CONFIG"] = homepage_config
         return {"err": "ok", "settings": settings, "sns": sns, "site_url": self.site_url}
 
     @js
@@ -566,6 +571,13 @@ class AdminSettings(BaseHandler):
                     "msg": _("系统时区无效，需填写 auto 或 IANA 时区名（如 Asia/Shanghai）"),
                 }
             args["site_timezone"] = tz
+        if "HOMEPAGE_CONFIG" in args:
+            args["HOMEPAGE_CONFIG"] = normalize_homepage(args["HOMEPAGE_CONFIG"])
+            homepage_hidden = set(args["HOMEPAGE_CONFIG"]["hidden"])
+            args["ENABLE_HOMEPAGE_READING_STATS"] = "readingStats" not in homepage_hidden
+            args["ENABLE_HOMEPAGE_READING_BOOKS"] = "index.myReading" not in homepage_hidden
+            args["ENABLE_HOMEPAGE_BOOKLISTS"] = "index.booklistRecommendation" not in homepage_hidden
+            args["ENABLE_BOOK_RECOMMEND_TO_OTHERS"] = "index.socialRecommendation" not in homepage_hidden
         # Check the douban_apikey if only number, letters, _ or -, and length <=48
         if "douban_apikey" in args:
             apikey = args["douban_apikey"]

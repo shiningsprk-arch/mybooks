@@ -270,8 +270,20 @@
   content: "\F0B73";
 }
 
+.mdi-card-outline::before {
+  content: "\F0B76";
+}
+
+.mdi-card-plus-outline::before {
+  content: "\F1200";
+}
+
 .mdi-cart::before {
   content: "\F0110";
+}
+
+.mdi-chart-bar::before {
+  content: "\F0128";
 }
 
 .mdi-chart-box-outline::before {
@@ -1184,6 +1196,14 @@
 
 .mdi-view-dashboard-outline::before {
   content: "\F0A1D";
+}
+
+.mdi-view-grid-outline::before {
+  content: "\F11D9";
+}
+
+.mdi-view-grid-plus-outline::before {
+  content: "\F11DA";
 }
 
 .mdi-view-list::before {
