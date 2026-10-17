@@ -41,6 +41,7 @@
     "newRecommendation": "Recent updated",
     "homeEmpty": "No homepage cards to show yet",
     "homeConfigure": "Configure homepage cards",
+    "customCardError": "Failed to load this card. Check its value or try again later.",
     "socialRecommendation": "Recommended by readers",
     "categoryBrowse": "Category",
     "categoryNavigation": "Tag Groups",

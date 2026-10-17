@@ -577,7 +577,13 @@ class AdminSettings(BaseHandler):
             args["ENABLE_HOMEPAGE_READING_STATS"] = "readingStats" not in homepage_hidden
             args["ENABLE_HOMEPAGE_READING_BOOKS"] = "index.myReading" not in homepage_hidden
             args["ENABLE_HOMEPAGE_BOOKLISTS"] = "index.booklistRecommendation" not in homepage_hidden
-            args["ENABLE_BOOK_RECOMMEND_TO_OTHERS"] = "index.socialRecommendation" not in homepage_hidden
+            if "index.randomRecommendation" not in homepage_hidden:
+                fallback_random = CONF.get("MAIN_PAGE_RANDOM_COUNT", 12) or 12
+                try:
+                    if int(args.get("MAIN_PAGE_RANDOM_COUNT", fallback_random) or 0) <= 0:
+                        args["MAIN_PAGE_RANDOM_COUNT"] = 12
+                except (TypeError, ValueError):
+                    args["MAIN_PAGE_RANDOM_COUNT"] = 12
         # Check the douban_apikey if only number, letters, _ or -, and length <=48
         if "douban_apikey" in args:
             apikey = args["douban_apikey"]

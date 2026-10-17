@@ -61,6 +61,10 @@ class TestMetaBooks(unittest.TestCase):
         with mock.patch.object(meta, "_", side_effect=lambda s: s):
             asyncio.run(MetaBooks.get(handler, "language", "中文"))
         self.assertEqual(handler.written, {"err": "ok", "books": [{"id": 4}]})
+        handler.run_calibre_read_async.assert_awaited_once()
+        sort_args = handler.run_calibre_read_async.await_args.args
+        self.assertEqual(sort_args[2], "language")
+        self.assertEqual(sort_args[3], "new")
         handler.get_book_list.assert_awaited_once()
         self.assertEqual(handler.get_book_list.await_args.kwargs["ids"], [4, 2, 1, 3])
         self.assertFalse(handler.get_book_list.await_args.kwargs["include_comments"])

@@ -121,11 +121,5 @@ export function sectionLabel(card, t) {
 }
 
 export function customCardViewAll(card) {
-  const value = encodeURIComponent(card.value || "");
-  if (card.type === "author") return `/author?name=${value}`;
-  if (card.type === "tag") return `/tag?name=${value}`;
-  if (card.type === "series") return `/series?name=${value}`;
-  if (card.type === "language") return `/language/${value}`;
-  if (card.type === "rating") return `/rating/${value}`;
-  return "/";
+  return `/${card.type}/${encodeURIComponent(card.value || "")}`;
 }

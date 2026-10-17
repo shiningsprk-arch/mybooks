@@ -28,8 +28,19 @@ class TestHomepageConfig(unittest.TestCase):
                 "custom": [{"id": "c1", "type": "author", "value": "刘慈欣"}],
             }
         )
-        self.assertEqual(config["order"][0], "index.myReading")
-        self.assertEqual(config["order"][1], "custom:c1")
+        self.assertEqual(
+            config["order"],
+            [
+                "index.myReading",
+                "custom:c1",
+                "libraryStats",
+                "readingStats",
+                "index.socialRecommendation",
+                "index.booklistRecommendation",
+                "index.randomRecommendation",
+                "index.newRecommendation",
+            ],
+        )
         self.assertEqual(config["order"].count("index.myReading"), 1)
         self.assertNotIn("unknown", config["order"])
         self.assertEqual(config["hidden"], ["index.myReading"])

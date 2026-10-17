@@ -211,6 +211,7 @@
             :style="{ order: sectionOrder.indexOf('index.newRecommendation') }"
         >
             <home-section-card
+                v-if="get_recent_books.length > 0"
                 icon="mdi-hexagram-outline"
                 :title="$t('index.newRecommendation')"
                 storage-key="index.newRecommendation"
@@ -236,7 +237,7 @@
             class="home-section-slot"
             :style="{ order: sectionOrder.indexOf('custom:' + card.id) }"
         >
-            <home-custom-card :card="card"></home-custom-card>
+            <home-custom-card :card="card" @state="onCustomCardState(card.id, $event)"></home-custom-card>
         </div>
     </div>
 
@@ -313,7 +314,12 @@ export default {
             });
         },
         homepageConfigNormalized() {
-            return normalizeHomepageConfig(this.homepageConfig || defaultHomepageConfig());
+            if (!this.homepageConfig) {
+                const fallback = defaultHomepageConfig();
+                fallback.hidden = fallback.order.slice();
+                return fallback;
+            }
+            return normalizeHomepageConfig(this.homepageConfig);
         },
         sectionOrder() {
             return this.homepageConfigNormalized.order;
@@ -326,11 +332,37 @@ export default {
                 (card) => card.value && !this.hiddenSections.has(cardSectionKey(card))
             );
         },
-        showEmptyState() {
-            const builtinVisible = this.sectionOrder.some(
-                (section) => !section.startsWith("custom:") && !this.hiddenSections.has(section)
+        builtinHasContent() {
+            if (this.isSectionEnabled('libraryStats')) return true;
+            if (this.isSectionEnabled('readingStats') && this.readingStatsHasData) return true;
+            if (this.isSectionEnabled('index.myReading') && this.reading_books.length > 0) return true;
+            if (this.isSectionEnabled('index.socialRecommendation') && this.social_recommend_books.length > 0) return true;
+            if (this.isSectionEnabled('index.booklistRecommendation') && this.homepage_booklists.length > 0) return true;
+            if (this.isSectionEnabled('index.randomRecommendation') && this.random_books.length > 0) return true;
+            if (this.isSectionEnabled('index.newRecommendation') && this.new_books.length > 0) return true;
+            return false;
+        },
+        customCardsHaveBooks() {
+            return Object.keys(this.customCardBooks).some((key) => this.customCardBooks[key]);
+        },
+        customCardsLoading() {
+            return Object.keys(this.customCardLoading).some((key) => this.customCardLoading[key]);
+        },
+        customCardsPending() {
+            return this.enabledCustomCards.some(
+                (card) => !(card.id in this.customCardLoading) && !(card.id in this.customCardBooks)
             );
-            return !builtinVisible && this.enabledCustomCards.length === 0;
+        },
+        homeLoading() {
+            if (this.isSectionEnabled('libraryStats') && this.statsLoading) return true;
+            if (this.isSectionEnabled('index.myReading') && this.readingLoading) return true;
+            if (this.isSectionEnabled('readingStats') && this.readingStatsPending) return true;
+            if (this.isSectionEnabled('index.booklistRecommendation') && !this.booklistsLoaded) return true;
+            return this.customCardsLoading || this.customCardsPending;
+        },
+        showEmptyState() {
+            if (this.homeLoading) return false;
+            return !this.builtinHasContent && !this.customCardsHaveBooks;
         },
         indexPage() {
             return this.$store.state.sys && this.$store.state.sys.indexPage;
@@ -347,7 +379,7 @@ export default {
             };
         },
         readingStatsPending() {
-            return this.isLoggedIn && !this.readingStatsResolved;
+            return this.isLoggedIn && !this.$vuetify.breakpoint.xsOnly && !this.readingStatsResolved;
         },
         sysReady() {
             return !!(this.$store.state.sys && this.$store.state.sys.version);
@@ -375,14 +407,33 @@ export default {
                 }
             } else {
                 this.reading_books = [];
+                this.readingStatsHasData = false;
+                this.readingStatsResolved = false;
             }
+        },
+        homepageConfig: {
+            deep: true,
+            handler() {
+                const ids = new Set(this.enabledCustomCards.map((card) => card.id));
+                Object.keys(this.customCardBooks).forEach((key) => {
+                    if (!ids.has(key)) {
+                        this.$delete(this.customCardBooks, key);
+                        this.$delete(this.customCardLoading, key);
+                    }
+                });
+            },
         },
     },
     methods: {
         isSectionEnabled(section) {
             return !this.hiddenSections.has(section);
         },
+        onCustomCardState(id, state) {
+            this.$set(this.customCardBooks, id, !!(state && state.hasBooks));
+            this.$set(this.customCardLoading, id, !!(state && state.loading));
+        },
         async loadLibraryStats() {
+            this.statsLoading = true;
             try {
                 const rsp = await this.$backend('/library/stats');
                 if (rsp.err === 'ok') {
@@ -390,6 +441,8 @@ export default {
                 }
             } catch (error) {
                 console.warn('Failed to load library stats:', error);
+            } finally {
+                this.statsLoading = false;
             }
         },
         async checkReleaseNotes() {
@@ -568,9 +621,12 @@ export default {
             app.$backend("/index"),
             app.$backend("/homepage").catch(() => null),
         ]);
+        const homepageConfig = homepageRsp && homepageRsp.err === 'ok'
+            ? homepageRsp.config
+            : (indexRsp && indexRsp.homepage);
         return {
             ...indexRsp,
-            homepageConfig: homepageRsp && homepageRsp.err === 'ok' ? homepageRsp.config : null,
+            homepageConfig: homepageConfig || null,
         };
     },
     data: () => ({
@@ -592,6 +648,9 @@ export default {
         countdown: 10,
         countdownTimer: null,
         homepageConfig: null,
+        statsLoading: true,
+        customCardBooks: {},
+        customCardLoading: {},
     }),
     head: () => ({
         titleTemplate: "%s",

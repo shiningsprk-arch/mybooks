@@ -116,7 +116,31 @@ class TestAdminSettingsPost(unittest.TestCase):
         self.assertFalse(saved["ENABLE_HOMEPAGE_READING_STATS"])
         self.assertFalse(saved["ENABLE_HOMEPAGE_READING_BOOKS"])
         self.assertTrue(saved["ENABLE_HOMEPAGE_BOOKLISTS"])
+        self.assertNotIn("ENABLE_BOOK_RECOMMEND_TO_OTHERS", saved)
         self.assertEqual(saved["HOMEPAGE_CONFIG"]["custom"][0]["value"], "刘慈欣")
+
+    def test_homepage_random_card_keeps_count_when_visible(self):
+        rsp, saved = self.post(
+            {
+                "HOMEPAGE_CONFIG": {"hidden": [], "custom": []},
+                "MAIN_PAGE_RANDOM_COUNT": 0,
+            }
+        )
+        self.assertEqual("ok", rsp["err"])
+        self.assertEqual(saved["MAIN_PAGE_RANDOM_COUNT"], 12)
+
+    def test_homepage_random_card_hidden_keeps_zero_count(self):
+        rsp, saved = self.post(
+            {
+                "HOMEPAGE_CONFIG": {
+                    "hidden": ["index.randomRecommendation"],
+                    "custom": [],
+                },
+                "MAIN_PAGE_RANDOM_COUNT": 0,
+            }
+        )
+        self.assertEqual("ok", rsp["err"])
+        self.assertEqual(saved["MAIN_PAGE_RANDOM_COUNT"], 0)
 
 
 if __name__ == "__main__":

@@ -53,7 +53,7 @@
       <v-icon small class="mr-2">mdi-card-plus-outline</v-icon>
       <span class="text-body-1">{{ $t("settings.homepage_custom") }}</span>
       <v-spacer></v-spacer>
-      <v-btn small color="primary" text @click="addCard">
+      <v-btn small color="primary" text :disabled="local.custom.length >= maxCustomCards" @click="addCard">
         <v-icon left small>mdi-plus</v-icon>{{ $t("settings.homepage_add_card") }}
       </v-btn>
     </div>
@@ -153,6 +153,7 @@ import {
   CUSTOM_LIMITS,
   CUSTOM_SORTS,
   CUSTOM_TYPES,
+  MAX_CUSTOM_CARDS,
   SECTION_META,
   cardSectionKey,
   defaultSortFor,
@@ -182,11 +183,13 @@ export default {
       emitting: false,
       dragSection: null,
       dragOverSection: null,
+      maxCustomCards: MAX_CUSTOM_CARDS,
       authorItems: [],
       tagItems: [],
       seriesItems: [],
       languageItems: [],
       searchTimers: {},
+      searchSeq: { author: 0, tag: 0 },
     };
   },
   computed: {
@@ -309,6 +312,8 @@ export default {
     onTypeChange(card) {
       card.value = "";
       card.sort = defaultSortFor(card.type);
+      this.searchSeq.author += 1;
+      this.searchSeq.tag += 1;
     },
     sortOptions(card) {
       return CUSTOM_SORTS.filter((sort) => sort !== "series" || card.type === "series").map((sort) => ({
@@ -326,15 +331,18 @@ export default {
       if (card.type !== "author" && card.type !== "tag") return;
       const key = card.type;
       if (this.searchTimers[key]) clearTimeout(this.searchTimers[key]);
+      const seq = this.searchSeq[key] + 1;
+      this.searchSeq[key] = seq;
       this.searchTimers[key] = setTimeout(() => {
-        const url = card.type === "author"
+        const url = key === "author"
           ? "/authors/search?limit=30&q=" + encodeURIComponent(query)
           : "/tags/search?limit=30&q=" + encodeURIComponent(query);
         this.$backend(url).then((rsp) => {
+          if (seq !== this.searchSeq[key] || card.type !== key) return;
           if (rsp.err !== "ok") return;
-          const items = card.type === "author" ? rsp.authors : rsp.tags;
+          const items = key === "author" ? rsp.authors : rsp.tags;
           const names = (items || []).map((item) => item.name);
-          if (card.type === "author") this.authorItems = names;
+          if (key === "author") this.authorItems = names;
           else this.tagItems = names;
         });
       }, 300);
@@ -350,6 +358,7 @@ export default {
       });
     },
     addCard() {
+      if (this.local.custom.length >= this.maxCustomCards) return;
       const id = "c" + Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
       this.local.custom = this.local.custom.concat([
         {

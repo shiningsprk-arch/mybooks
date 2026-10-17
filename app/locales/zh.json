@@ -41,6 +41,7 @@
     "newRecommendation": "新书推荐",
     "homeEmpty": "首页还没有可显示的卡片",
     "homeConfigure": "去设置首页卡片",
+    "customCardError": "加载失败，请检查卡片内容或稍后重试",
     "socialRecommendation": "新评书籍",
     "categoryBrowse": "分类浏览",
     "categoryNavigation": "标签分类",

@@ -1,6 +1,6 @@
 <template>
   <home-section-card
-    v-if="loading || books.length"
+    v-if="loading || books.length || error"
     :icon="icon"
     :title="title"
     :storage-key="'custom:' + card.id"
@@ -17,6 +17,11 @@
             <v-skeleton-loader type="image" class="cover-fill-img"></v-skeleton-loader>
           </div>
         </v-card>
+      </v-col>
+    </v-row>
+    <v-row v-else-if="error">
+      <v-col cols="12">
+        <p class="grey--text text-body-2 mb-0">{{ $t("index.customCardError") }}</p>
       </v-col>
     </v-row>
     <v-row v-else>
@@ -59,6 +64,8 @@ export default {
     return {
       books: [],
       loading: false,
+      error: false,
+      loadSeq: 0,
     };
   },
   computed: {
@@ -85,16 +92,22 @@ export default {
   },
   methods: {
     async loadBooks() {
+      const seq = ++this.loadSeq;
       if (!this.card.value) {
         this.books = [];
+        this.error = false;
+        this.$emit("state", { hasBooks: false, loading: false });
         return;
       }
       const sort = this.card.sort || defaultSortFor(this.card.type);
       const value = encodeURIComponent(this.card.value);
       const url = `/${this.card.type}/${value}?size=${this.card.limit}&sort=${sort}&cover=1`;
       this.loading = true;
+      this.error = false;
+      this.$emit("state", { hasBooks: this.books.length > 0, loading: true });
       try {
         const rsp = await this.$backend(url);
+        if (seq !== this.loadSeq) return;
         if (rsp.err === "ok") {
           this.books = (rsp.books || []).map((book) => {
             book.href = "/book/" + book.id;
@@ -102,11 +115,19 @@ export default {
           });
         } else {
           this.books = [];
+          this.error = true;
+          console.warn("Failed to load homepage custom card:", rsp.err);
         }
       } catch (error) {
+        if (seq !== this.loadSeq) return;
         this.books = [];
+        this.error = true;
+        console.warn("Failed to load homepage custom card:", error);
       } finally {
-        this.loading = false;
+        if (seq === this.loadSeq) {
+          this.loading = false;
+          this.$emit("state", { hasBooks: this.books.length > 0, loading: false });
+        }
       }
     },
   },
