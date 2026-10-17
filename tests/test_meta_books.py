@@ -33,17 +33,38 @@ class TestMetaBooks(unittest.TestCase):
     def test_series_sort_by_index_then_sort_key(self):
         self.assertEqual(make_handler()._sorted_ids({1, 2, 3, 4}, "series"), [3, 4, 2, 1])
 
+    def test_new_sort(self):
+        self.assertEqual(make_handler()._sorted_ids({1, 2, 3, 4}, "tag", "new"), [4, 3, 2, 1])
+
+    def test_title_sort(self):
+        self.assertEqual(make_handler()._sorted_ids({1, 2, 3, 4}, "tag", "title"), [4, 1, 3, 2])
+
+    def test_random_sort_keeps_all_ids(self):
+        result = make_handler()._sorted_ids({1, 2, 3, 4}, "tag", "random")
+        self.assertEqual(sorted(result), [1, 2, 3, 4])
+
     def test_get_pages_ids_instead_of_loading_all_books(self):
         handler = make_handler()
+        handler.get_argument = lambda name, default=None: {
+            "sort": "new",
+            "cover": "1",
+        }.get(name, default)
         handler.run_calibre_async = mock.AsyncMock(return_value={1, 2, 3, 4})
         handler.run_calibre_read_async = mock.AsyncMock(return_value=[4, 2, 1, 3])
-        handler.render_book_list = mock.AsyncMock(return_value="rendered")
+        handler.get_book_list = mock.AsyncMock(return_value={"err": "ok", "books": [{"id": 4}]})
+        handler.request = mock.Mock()
+        handler.request.headers = {}
+        handler.written = None
+        handler.set_header = lambda *args, **kwargs: None
+        handler.write = lambda rsp: setattr(handler, "written", rsp)
+        handler.finish = lambda: None
         with mock.patch.object(meta, "_", side_effect=lambda s: s):
-            result = asyncio.run(handler.get("language", "中文"))
-        self.assertEqual(result, "rendered")
-        handler.render_book_list.assert_awaited_once()
-        self.assertEqual(handler.render_book_list.await_args.kwargs["ids"], [4, 2, 1, 3])
-        self.assertEqual(handler.render_book_list.await_args.args[0], [])
+            asyncio.run(MetaBooks.get(handler, "language", "中文"))
+        self.assertEqual(handler.written, {"err": "ok", "books": [{"id": 4}]})
+        handler.get_book_list.assert_awaited_once()
+        self.assertEqual(handler.get_book_list.await_args.kwargs["ids"], [4, 2, 1, 3])
+        self.assertFalse(handler.get_book_list.await_args.kwargs["include_comments"])
+        self.assertEqual(handler.get_book_list.await_args.args[0], [])
 
 
 if __name__ == "__main__":

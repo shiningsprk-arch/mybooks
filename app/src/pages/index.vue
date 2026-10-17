@@ -1,66 +1,67 @@
 <template>
     <div>
-    <!-- 书库统计标题栏 -->
-    <v-row class="library-stats-bar">
-        <v-col cols="12">
-            <div class="stats-container">
-                <v-btn icon x-small dark class="stats-toggle" :title="showDetail ? $t('index.detailHideDetail') : $t('index.detailShowDetail')" @click="showDetail = !showDetail">
-                    <v-icon>{{ showDetail ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
-                </v-btn>
-                <div class="stats-content">
-                    <div class="stat-group">
-                        <span class="stat-label">{{ $t('index.totalBooks') }}:</span>
-                        <span class="stat-value">{{ stats.total_books }}</span>
-                    </div>
-                    <div class="stat-separator">|</div>
-                    <div class="stat-group">
-                        <span class="stat-label">{{ $t('index.ebookCount') }}:</span>
-                        <span class="stat-value">{{ stats.ebook_count }}</span>
-                    </div>
-                    <template v-if="allowPhysicalBooks">
-                        <div class="stat-separator">|</div>
-                        <div class="stat-group">
-                            <span class="stat-label">{{ $t('index.physicalCount') }}:</span>
-                            <span class="stat-value">{{ stats.physical_count }}</span>
-                        </div>
-                    </template>
-                    <div class="stat-separator">|</div>
-                    <div class="stat-group">
-                        <span class="stat-label">{{ $t('index.monthNewBooks') }}:</span>
-                        <span class="stat-value month-new">
-                            {{ $t('index.ebookCount') }} {{ stats.month_ebook_count }}
-                            <template v-if="allowPhysicalBooks">+ {{ $t('index.physicalCount') }} {{ stats.month_physical_count }}</template>
-                        </span>
-                    </div>
-                </div>
-            </div>
-        </v-col>
-    </v-row>
-
-    <library-overview v-if="libraryStats && showDetail" :allow-physical-books="allowPhysicalBooks"></library-overview>
-
-    <div v-if="!lazyHome" class="reading-stats-banner-wrapper" :class="{ 'is-pending': readingStatsPending }" v-show="readingStatsHasData || readingStatsPending">
-        <reading-stats-banner v-if="!$vuetify.breakpoint.xsOnly" home :show-title="false" @has-stats="onReadingStatsHasData"></reading-stats-banner>
-    </div>
-    <home-section-card
-        v-else-if="isLoggedIn && !$vuetify.breakpoint.xsOnly"
-        v-show="readingStatsHasData || readingStatsPending"
-        icon="mdi-chart-box-outline"
-        :title="$t('index.readingStats.title')"
-        storage-key="index.readingStats"
-        :default-expanded="false"
-        @toggle="onStatsToggle"
-    >
-        <reading-stats-banner v-show="statsExpanded" home :show-title="false" @has-stats="onReadingStatsHasData"></reading-stats-banner>
-    </home-section-card>
-
     <div class="home-sections-container">
+        <div v-if="isSectionEnabled('libraryStats')" class="home-section-slot" :style="{ order: sectionOrder.indexOf('libraryStats') }">
+            <v-row class="library-stats-bar">
+                <v-col cols="12">
+                    <div class="stats-container">
+                        <v-btn icon x-small dark class="stats-toggle" :title="showDetail ? $t('index.detailHideDetail') : $t('index.detailShowDetail')" @click="showDetail = !showDetail">
+                            <v-icon>{{ showDetail ? 'mdi-chevron-up' : 'mdi-chevron-down' }}</v-icon>
+                        </v-btn>
+                        <div class="stats-content">
+                            <div class="stat-group">
+                                <span class="stat-label">{{ $t('index.totalBooks') }}:</span>
+                                <span class="stat-value">{{ stats.total_books }}</span>
+                            </div>
+                            <div class="stat-separator">|</div>
+                            <div class="stat-group">
+                                <span class="stat-label">{{ $t('index.ebookCount') }}:</span>
+                                <span class="stat-value">{{ stats.ebook_count }}</span>
+                            </div>
+                            <template v-if="allowPhysicalBooks">
+                                <div class="stat-separator">|</div>
+                                <div class="stat-group">
+                                    <span class="stat-label">{{ $t('index.physicalCount') }}:</span>
+                                    <span class="stat-value">{{ stats.physical_count }}</span>
+                                </div>
+                            </template>
+                            <div class="stat-separator">|</div>
+                            <div class="stat-group">
+                                <span class="stat-label">{{ $t('index.monthNewBooks') }}:</span>
+                                <span class="stat-value month-new">
+                                    {{ $t('index.ebookCount') }} {{ stats.month_ebook_count }}
+                                    <template v-if="allowPhysicalBooks">+ {{ $t('index.physicalCount') }} {{ stats.month_physical_count }}</template>
+                                </span>
+                            </div>
+                        </div>
+                    </div>
+                </v-col>
+            </v-row>
+
+            <library-overview v-if="libraryStats && showDetail" :allow-physical-books="allowPhysicalBooks"></library-overview>
+        </div>
+
+        <div v-if="isSectionEnabled('readingStats')" class="home-section-slot" :style="{ order: sectionOrder.indexOf('readingStats') }">
+            <div v-if="!lazyHome" class="reading-stats-banner-wrapper" :class="{ 'is-pending': readingStatsPending }" v-show="readingStatsHasData || readingStatsPending">
+                <reading-stats-banner v-if="!$vuetify.breakpoint.xsOnly" home :show-title="false" @has-stats="onReadingStatsHasData"></reading-stats-banner>
+            </div>
+            <home-section-card
+                v-else-if="isLoggedIn && !$vuetify.breakpoint.xsOnly"
+                v-show="readingStatsHasData || readingStatsPending"
+                icon="mdi-chart-box-outline"
+                :title="$t('index.readingStats.title')"
+                storage-key="index.readingStats"
+                :default-expanded="false"
+                @toggle="onStatsToggle"
+            >
+                <reading-stats-banner v-show="statsExpanded" home :show-title="false" @has-stats="onReadingStatsHasData"></reading-stats-banner>
+            </home-section-card>
+        </div>
+
         <div
+            v-if="isSectionEnabled('index.myReading')"
             class="home-section-slot"
             :style="{ order: sectionOrder.indexOf('index.myReading') }"
-            @dragover.prevent="onSectionDragOver('index.myReading')"
-            @dragleave="onSectionDragLeave('index.myReading')"
-            @drop.prevent="onSectionDrop('index.myReading')"
         >
             <home-section-card
                 v-if="readingLoading && isLoggedIn && reading_books.length === 0"
@@ -83,9 +84,6 @@
                 icon="mdi-book-open-page-variant-outline"
                 :title="$t('index.myReading')"
                 storage-key="index.myReading"
-                :drag-over="dragOverKey === 'index.myReading'"
-                @drag-start="onSectionDragStart('index.myReading', $event)"
-                @drag-end="onSectionDragEnd"
             >
                 <v-row>
                     <v-col cols="4" xs="4" sm="3" md="2" lg="1" v-for="(book,idx) in get_reading_books" :key="'reading'+idx+book.id" class="book-card">
@@ -112,20 +110,15 @@
         </div>
 
         <div
+            v-if="isSectionEnabled('index.socialRecommendation')"
             class="home-section-slot"
             :style="{ order: sectionOrder.indexOf('index.socialRecommendation') }"
-            @dragover.prevent="onSectionDragOver('index.socialRecommendation')"
-            @dragleave="onSectionDragLeave('index.socialRecommendation')"
-            @drop.prevent="onSectionDrop('index.socialRecommendation')"
         >
             <home-section-card
                 v-if="social_recommend_books.length > 0"
                 icon="mdi-star-check"
                 :title="$t('index.socialRecommendation')"
                 storage-key="index.socialRecommendation"
-                :drag-over="dragOverKey === 'index.socialRecommendation'"
-                @drag-start="onSectionDragStart('index.socialRecommendation', $event)"
-                @drag-end="onSectionDragEnd"
             >
                 <v-row>
                     <v-col cols="4" xs="4" sm="3" md="2" lg="1" v-for="(book,idx) in get_social_recommend_books" :key="'social-rec'+idx+book.id" class="book-card">
@@ -155,11 +148,9 @@
         </div>
 
         <div
+            v-if="isSectionEnabled('index.booklistRecommendation')"
             class="home-section-slot"
             :style="{ order: sectionOrder.indexOf('index.booklistRecommendation') }"
-            @dragover.prevent="onSectionDragOver('index.booklistRecommendation')"
-            @dragleave="onSectionDragLeave('index.booklistRecommendation')"
-            @drop.prevent="onSectionDrop('index.booklistRecommendation')"
         >
             <home-section-card
                 v-if="homepage_booklists.length > 0 || (lazyHome && !booklistsLoaded)"
@@ -167,10 +158,7 @@
                 :title="$t('index.booklistRecommendation')"
                 storage-key="index.booklistRecommendation"
                 :default-expanded="!lazyHome"
-                :drag-over="dragOverKey === 'index.booklistRecommendation'"
                 @toggle="onBooklistsToggle"
-                @drag-start="onSectionDragStart('index.booklistRecommendation', $event)"
-                @drag-end="onSectionDragEnd"
             >
                 <div v-if="homepage_booklists.length === 0" class="text-center pa-4">
                     <v-progress-circular indeterminate size="24"></v-progress-circular>
@@ -184,20 +172,15 @@
         </div>
 
         <div
+            v-if="isSectionEnabled('index.randomRecommendation')"
             class="home-section-slot"
             :style="{ order: sectionOrder.indexOf('index.randomRecommendation') }"
-            @dragover.prevent="onSectionDragOver('index.randomRecommendation')"
-            @dragleave="onSectionDragLeave('index.randomRecommendation')"
-            @drop.prevent="onSectionDrop('index.randomRecommendation')"
         >
             <home-section-card
                 v-if="random_books.length > 0"
                 icon="mdi-apple-keyboard-command"
                 :title="$t('index.randomRecommendation')"
                 storage-key="index.randomRecommendation"
-                :drag-over="dragOverKey === 'index.randomRecommendation'"
-                @drag-start="onSectionDragStart('index.randomRecommendation', $event)"
-                @drag-end="onSectionDragEnd"
             >
                 <template #header-extra>
                     <v-icon color="primary" class="ml-1 refresh-icon" @click="refreshBooks('random')">mdi-refresh</v-icon>
@@ -223,19 +206,14 @@
         </div>
 
         <div
+            v-if="isSectionEnabled('index.newRecommendation')"
             class="home-section-slot"
             :style="{ order: sectionOrder.indexOf('index.newRecommendation') }"
-            @dragover.prevent="onSectionDragOver('index.newRecommendation')"
-            @dragleave="onSectionDragLeave('index.newRecommendation')"
-            @drop.prevent="onSectionDrop('index.newRecommendation')"
         >
             <home-section-card
                 icon="mdi-hexagram-outline"
                 :title="$t('index.newRecommendation')"
                 storage-key="index.newRecommendation"
-                :drag-over="dragOverKey === 'index.newRecommendation'"
-                @drag-start="onSectionDragStart('index.newRecommendation', $event)"
-                @drag-end="onSectionDragEnd"
             >
                 <template #header-extra>
                     <v-icon color="primary" class="ml-1 refresh-icon" @click="refreshBooks('new')">mdi-refresh</v-icon>
@@ -251,6 +229,23 @@
                 </v-row>
             </home-section-card>
         </div>
+
+        <div
+            v-for="card in enabledCustomCards"
+            :key="'custom-section-' + card.id"
+            class="home-section-slot"
+            :style="{ order: sectionOrder.indexOf('custom:' + card.id) }"
+        >
+            <home-custom-card :card="card"></home-custom-card>
+        </div>
+    </div>
+
+    <div v-if="showEmptyState" class="home-empty-state text-center pa-8">
+        <v-icon size="48" color="grey lighten-1">mdi-view-dashboard-outline</v-icon>
+        <p class="mt-3 mb-2">{{ $t("index.homeEmpty") }}</p>
+        <v-btn v-if="isAdmin" color="primary" text :to="{ path: '/admin/settings', hash: '#sec-site-site-home-cards' }">
+            {{ $t("index.homeConfigure") }}
+        </v-btn>
     </div>
 
     <!-- Release Notes Dialog -->
@@ -279,6 +274,8 @@
 import BookCards from "~/components/BookCards.vue";
 import BookListCard from "~/components/BookListCard.vue";
 import HomeSectionCard from "~/components/HomeSectionCard.vue";
+import HomeCustomCard from "~/components/HomeCustomCard.vue";
+import { cardSectionKey, defaultHomepageConfig, normalizeHomepageConfig } from "~/utils/homepage";
 export default {
     name: 'IndexPage',
     components: {
@@ -287,6 +284,7 @@ export default {
         LibraryOverview: () => import("~/components/LibraryOverview.vue"),
         BookListCard,
         HomeSectionCard,
+        HomeCustomCard,
     },
     computed: {
         get_random_books: function() {
@@ -314,11 +312,34 @@ export default {
                 return b;
             });
         },
+        homepageConfigNormalized() {
+            return normalizeHomepageConfig(this.homepageConfig || defaultHomepageConfig());
+        },
+        sectionOrder() {
+            return this.homepageConfigNormalized.order;
+        },
+        hiddenSections() {
+            return new Set(this.homepageConfigNormalized.hidden);
+        },
+        enabledCustomCards() {
+            return this.homepageConfigNormalized.custom.filter(
+                (card) => card.value && !this.hiddenSections.has(cardSectionKey(card))
+            );
+        },
+        showEmptyState() {
+            const builtinVisible = this.sectionOrder.some(
+                (section) => !section.startsWith("custom:") && !this.hiddenSections.has(section)
+            );
+            return !builtinVisible && this.enabledCustomCards.length === 0;
+        },
         indexPage() {
             return this.$store.state.sys && this.$store.state.sys.indexPage;
         },
         isLoggedIn() {
             return !!(this.$store.state.user && this.$store.state.user.is_login);
+        },
+        isAdmin() {
+            return !!(this.$store.state.user && this.$store.state.user.is_admin);
         },
         stats() {
             return this.libraryStats || {
@@ -349,13 +370,18 @@ export default {
         isLoggedIn(loggedIn) {
             if (loggedIn) {
                 this.readingStatsResolved = false;
-                this.loadReadingBooks();
+                if (this.isSectionEnabled('index.myReading')) {
+                    this.loadReadingBooks();
+                }
             } else {
                 this.reading_books = [];
             }
         },
     },
     methods: {
+        isSectionEnabled(section) {
+            return !this.hiddenSections.has(section);
+        },
         async loadLibraryStats() {
             try {
                 const rsp = await this.$backend('/library/stats');
@@ -424,7 +450,7 @@ export default {
             });
         },
         async loadReadingBooks() {
-            if (!this.isLoggedIn) {
+            if (!this.isLoggedIn || !this.isSectionEnabled('index.myReading')) {
                 this.reading_books = [];
                 return;
             }
@@ -469,6 +495,10 @@ export default {
             }
         },
         async loadBooklists() {
+            if (!this.isSectionEnabled('index.booklistRecommendation')) {
+                this.booklistsLoaded = true;
+                return;
+            }
             try {
                 const rsp = await this.$backend('/booklists/homepage');
                 if (rsp.err === 'ok') {
@@ -493,70 +523,20 @@ export default {
                 // ignore
             }
         },
-        loadSectionOrder() {
-            try {
-                const raw = window.localStorage.getItem('home-section-order');
-                const saved = raw ? JSON.parse(raw) : null;
-                if (Array.isArray(saved)) {
-                    const known = saved.filter(k => this.sectionKeys.includes(k));
-                    const missing = this.sectionKeys.filter(k => !known.includes(k));
-                    return [...known, ...missing];
-                }
-            } catch (e) {
-                // ignore
-            }
-            return [...this.sectionKeys];
-        },
-        saveSectionOrder() {
-            try {
-                window.localStorage.setItem('home-section-order', JSON.stringify(this.sectionOrder));
-            } catch (e) {
-                // ignore (privacy mode / storage disabled)
-            }
-        },
-        onSectionDragStart(key, event) {
-            this.dragKey = key;
-            if (event && event.dataTransfer) {
-                event.dataTransfer.effectAllowed = 'move';
-                event.dataTransfer.setData('text/plain', key);
-            }
-        },
-        onSectionDragOver(key) {
-            if (this.dragKey && this.dragKey !== key) {
-                this.dragOverKey = key;
-            }
-        },
-        onSectionDragLeave(key) {
-            if (this.dragOverKey === key) {
-                this.dragOverKey = null;
-            }
-        },
-        onSectionDrop(key) {
-            const from = this.sectionOrder.indexOf(this.dragKey);
-            const to = this.sectionOrder.indexOf(key);
-            if (from === -1 || to === -1 || from === to) {
-                this.onSectionDragEnd();
-                return;
-            }
-            const order = this.sectionOrder.slice();
-            order.splice(from, 1);
-            order.splice(to, 0, this.dragKey);
-            this.sectionOrder = order;
-            this.saveSectionOrder();
-            this.onSectionDragEnd();
-        },
-        onSectionDragEnd() {
-            this.dragKey = null;
-            this.dragOverKey = null;
-        },
     },
     mounted() {
         setTimeout(() => this.checkReleaseNotes(), 1500);
-        this.loadReadingBooks();
-        if (this.sysReady && this.lazyHome) {
-            this.defer(() => this.loadLibraryStats(), 300);
-        } else {
-            this.loadLibraryStats();
+        if (this.isSectionEnabled('index.myReading')) {
+            this.loadReadingBooks();
+        }
+        if (this.isSectionEnabled('libraryStats')) {
+            if (this.sysReady && this.lazyHome) {
+                this.defer(() => this.loadLibraryStats(), 300);
+            } else {
+                this.loadLibraryStats();
+            }
+        }
+        if (this.isSectionEnabled('index.booklistRecommendation') && !(this.sysReady && this.lazyHome)) {
             this.loadBooklists();
         }
         // 强制重新渲染图片，修复从其他页面返回时的布局问题
@@ -578,14 +558,20 @@ export default {
     },
     created() {
         this.$store.commit('navbar', true);
-        this.sectionOrder = this.loadSectionOrder();
         this.readingLoading = this.isLoggedIn;
     },
     async asyncData({ app, res }) {
         if ( res !== undefined ) {
             res.setHeader('Cache-Control', 'no-cache');
         }
-        return app.$backend("/index");
+        const [indexRsp, homepageRsp] = await Promise.all([
+            app.$backend("/index"),
+            app.$backend("/homepage").catch(() => null),
+        ]);
+        return {
+            ...indexRsp,
+            homepageConfig: homepageRsp && homepageRsp.err === 'ok' ? homepageRsp.config : null,
+        };
     },
     data: () => ({
         random_books: [],
@@ -605,17 +591,7 @@ export default {
         releaseNotesContent: '',
         countdown: 10,
         countdownTimer: null,
-        // 首页各模块的默认顺序，拖动排序后持久化到 localStorage
-        sectionKeys: [
-            'index.myReading',
-            'index.socialRecommendation',
-            'index.booklistRecommendation',
-            'index.randomRecommendation',
-            'index.newRecommendation',
-        ],
-        sectionOrder: [],
-        dragKey: null,
-        dragOverKey: null,
+        homepageConfig: null,
     }),
     head: () => ({
         titleTemplate: "%s",
@@ -732,6 +708,16 @@ export default {
 .home-sections-container {
     display: flex;
     flex-direction: column;
+}
+
+.home-empty-state {
+    background: rgba(245, 255, 248, 0.8);
+    border-radius: 10px;
+    margin-top: 5px;
+}
+
+.theme--dark .home-empty-state {
+    background: rgba(0, 0, 0, 0.8);
 }
 
 .home-section-slot {

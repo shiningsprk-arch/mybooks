@@ -38,6 +38,7 @@ from webserver.base.image_generator import ImageGenerator
 from webserver.base.image_helper import ImageHelper
 from webserver.base.epub_helper import EpubHelper
 from webserver.base.meta_helper import guess_authors, guess_tags
+from webserver.base.homepage import get_homepage_config
 from webserver.services.book_visit_service import BookVisitService
 from webserver.services.book_access_service import BookAccessService
 from webserver.services.autofill import AutoFillService
@@ -240,6 +241,12 @@ class Index(BaseHandler):
         if home_key is not None:
             BaseHandler._home_cache.put(home_key, self.library_version(), result)
         return result
+
+
+class HomepageConfig(BaseHandler):
+    @js
+    def get(self):
+        return {"err": "ok", "config": get_homepage_config()}
 
 
 class BookDetail(BaseHandler):
@@ -4772,6 +4779,7 @@ class BookExchangeType(BaseHandler):
 def routes():
     return [
         (r"/api/index", Index),
+        (r"/api/homepage", HomepageConfig),
         (r"/api/search", SearchBook),
         (r"/api/recent", RecentBook),
         (r"/api/all", RecentBook),

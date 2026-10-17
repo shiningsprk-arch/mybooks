@@ -399,6 +399,10 @@
             </template>
             </div>
 
+            <template v-if="s.special === 'homepage_cards'">
+              <homepage-cards-editor v-if="settingsLoaded" v-model="settings.HOMEPAGE_CONFIG"></homepage-cards-editor>
+            </template>
+
             <template v-if="s.special === 'friends'">
               <div class="pl-6">
               <v-row
@@ -1071,6 +1075,8 @@ import SSLManager from "~/components/SSLManager.vue";
 import ReadingRangeDialog from "~/components/ReadingRangeDialog.vue";
 import BookNavEditor, { createCategory } from "~/components/BookNavEditor.vue";
 import ReaderDictEditor from "~/components/ReaderDictEditor.vue";
+import HomepageCardsEditor from "~/components/HomepageCardsEditor.vue";
+import { normalizeHomepageConfig } from "~/utils/homepage";
 import { languageOptions } from "~/utils/languageCodes";
 import { isHexColor, DEFAULT_ACCENT } from "~/utils/appearance";
 
@@ -1084,6 +1090,7 @@ const LITE_GROUPS = [
 
 // 特殊块（动态列表/子组件）不在 groups.fields 里，搜索索引需在此手动注册
 const SPECIAL_BLOCKS = [
+  { key: "HOMEPAGE_CONFIG", label: "settings.sec_site_home_cards", icon: "mdi-view-grid-plus-outline", gid: "site", sid: "site-home-cards", al: ["首页卡片", "自定义卡片", "homepage cards", "首頁卡片"] },
   { key: "FRIENDS", label: "settings.friend_links", icon: "mdi-link-variant", gid: "site", sid: "site-friends" },
   { key: "READER_MYDICTS", label: "settings.sec_reader_dict", icon: "mdi-book-alphabet", gid: "reading", sid: "reader-dict", al: ["翻译"] },
   { key: "READER_DICT_MYBOOKS_ENABLED", label: "settings.reader_dict_mybooks", icon: "mdi-book-alphabet", gid: "reading", sid: "reader-dict" },
@@ -1139,20 +1146,21 @@ const SEARCH_ALIASES = {
     语言: ["site_language", "DEFAULT_LANGUAGE"], 中文: ["site_language"], english: ["site_language"], 繁体: ["site_language"], 简体: ["site_language"], 简繁: ["site_language"], 多语言: ["site_language", "DEFAULT_LANGUAGE"], 切换: ["site_language"], 默认语言: ["DEFAULT_LANGUAGE"],
     时区: ["site_timezone"], 系统时区: ["site_timezone"], 时区设置: ["site_timezone"], 东八区: ["site_timezone"], 格林威治: ["site_timezone"], 跨天: ["site_timezone"], 统计口径: ["site_timezone"], utc: ["site_timezone"], timezone: ["site_timezone"],
     主页: ["INDEX_PAGE_TYPE", "MAIN_PAGE_RANDOM_COUNT", "MAIN_PAGE_RECENT_COUNT"], 默认页: ["INDEX_PAGE_TYPE"], 首页类型: ["INDEX_PAGE_TYPE"],
+    首页卡片: ["HOMEPAGE_CONFIG"], 自定义卡片: ["HOMEPAGE_CONFIG"], 卡片: ["HOMEPAGE_CONFIG"], 作者卡片: ["HOMEPAGE_CONFIG"], 标签卡片: ["HOMEPAGE_CONFIG"], 丛书卡片: ["HOMEPAGE_CONFIG"], 语言卡片: ["HOMEPAGE_CONFIG"], 评分卡片: ["HOMEPAGE_CONFIG"],
     项目链接: ["HIDE_PROJECT_LINKS"], 隐藏链接: ["HIDE_PROJECT_LINKS"], 开源链接: ["HIDE_PROJECT_LINKS"],
     友情链接: ["FRIENDS"], 友链: ["FRIENDS"], 链接: ["FRIENDS", "HIDE_PROJECT_LINKS", "douban_baseurl", "AI_API_URL", "static_host", "SITE_URL"],
     网址: ["douban_baseurl", "AI_API_URL", "static_host", "SITE_URL"], 地址: ["douban_baseurl", "AI_API_URL", "static_host", "smtp_server", "SITE_URL"],
     // 站点与外观 · 首页与列表
-    随机: ["MAIN_PAGE_RANDOM_COUNT"], 推荐: ["RECOMMEND_ENABLE", "RECOMMEND_USE_CROWD", "ENABLE_BOOK_RECOMMEND_TO_OTHERS", "MAIN_PAGE_RANDOM_COUNT"], 智能: ["RECOMMEND_ENABLE"],
+    随机: ["MAIN_PAGE_RANDOM_COUNT"], 推荐: ["RECOMMEND_ENABLE", "RECOMMEND_USE_CROWD", "MAIN_PAGE_RANDOM_COUNT"], 智能: ["RECOMMEND_ENABLE"],
     协同: ["RECOMMEND_USE_CROWD"], 协同过滤: ["RECOMMEND_USE_CROWD"], 参考他人: ["RECOMMEND_USE_CROWD"],
     新书: ["MAIN_PAGE_RECENT_COUNT", "SEND_MAIL_FOR_NEW_BOOKS"], 最新: ["MAIN_PAGE_RECENT_COUNT"], 最近更新: ["MAIN_PAGE_RECENT_COUNT"],
     分页: ["DEFAULT_PAGE_SIZE"], 每页: ["DEFAULT_PAGE_SIZE"], 每页数量: ["DEFAULT_PAGE_SIZE"],
     侧边栏: ["SIDEBAR_ITEMS"], 侧栏: ["SIDEBAR_ITEMS"], 菜单: ["SIDEBAR_ITEMS"], 导航栏: ["SIDEBAR_ITEMS"], 侧边导航: ["SIDEBAR_ITEMS"],
-    首页显示: ["ENABLE_HOMEPAGE_READING_STATS", "ENABLE_HOMEPAGE_READING_BOOKS", "ENABLE_HOMEPAGE_BOOKLISTS", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"],
-    统计: ["ENABLE_HOMEPAGE_READING_STATS", "ALLOW_USER_DISABLE_STATISTIC"], banner: ["ENABLE_HOMEPAGE_READING_STATS"], 阅读统计: ["ENABLE_HOMEPAGE_READING_STATS"],
-    在读: ["ENABLE_HOMEPAGE_READING_BOOKS"], 正在阅读: ["ENABLE_HOMEPAGE_READING_BOOKS"],
-    书单: ["ENABLE_HOMEPAGE_BOOKLISTS", "BOOK_NAV"], 书单推荐: ["ENABLE_HOMEPAGE_BOOKLISTS"],
-    推荐给他人: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS"], 他人推荐: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS"],
+    首页显示: ["HOMEPAGE_CONFIG"],
+    统计: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], banner: ["HOMEPAGE_CONFIG"], 阅读统计: ["HOMEPAGE_CONFIG"],
+    在读: ["HOMEPAGE_CONFIG"], 正在阅读: ["HOMEPAGE_CONFIG"],
+    书单: ["HOMEPAGE_CONFIG", "BOOK_NAV"], 书单推荐: ["HOMEPAGE_CONFIG"],
+    推荐给他人: ["HOMEPAGE_CONFIG"], 他人推荐: ["HOMEPAGE_CONFIG"],
     // 站点与外观 · 书籍分类
     分类: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER", "ENABLE_FOLDER_BROWSE", "AI_ALLOW_SET_CATEGORY"], 导航: ["BOOK_NAV"], 标签: ["BOOK_NAV"],
     分类导航: ["BOOK_NAV"], 分类管理: ["BOOK_NAV"], 分类树: ["BOOK_NAV"],
@@ -1171,7 +1179,7 @@ const SEARCH_ALIASES = {
     生词: ["READER_MYDICTS"], 划词: ["READER_MYDICTS"], 查词: ["READER_MYDICTS"], 取词: ["READER_MYDICTS"],
     百科: ["READER_DICT_BAIKE_ENABLED"], 百度百科: ["READER_DICT_BAIKE_ENABLED"],
     // 阅读与内容 · 书评与互动
-    评论: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"], 评分: ["ENABLE_BOOK_REVIEW"], 书评: ["ENABLE_BOOK_REVIEW"], 打分: ["ENABLE_BOOK_REVIEW"], 星级: ["ENABLE_BOOK_REVIEW"],
+    评论: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL"], 评分: ["ENABLE_BOOK_REVIEW"], 书评: ["ENABLE_BOOK_REVIEW"], 打分: ["ENABLE_BOOK_REVIEW"], 星级: ["ENABLE_BOOK_REVIEW"],
     审核: ["REVIEW_REQUIRES_APPROVAL", "ENABLE_AUTO_NEW_USER_APPROVAL"], 先审后发: ["REVIEW_REQUIRES_APPROVAL"],
     // 阅读与内容 · 实体书与图章
     实体书: ["ENABLE_PHYSICAL_BOOKS", "ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], 纸书: ["ENABLE_PHYSICAL_BOOKS"], 纸质书: ["ENABLE_PHYSICAL_BOOKS"], 书架: ["ENABLE_PHYSICAL_BOOKS"], 印刷: ["ENABLE_PHYSICAL_BOOKS"],
@@ -1283,21 +1291,22 @@ const SEARCH_ALIASES = {
     預設連結: ["SITE_URL"], 存取連結: ["SITE_URL"], 分享連結: ["SITE_URL"], 分享網址: ["SITE_URL"], 對外網址: ["SITE_URL"], 外網: ["SITE_URL"], 內網: ["SITE_URL"], 二維碼: ["SITE_URL"],
     語言: ["site_language", "DEFAULT_LANGUAGE"], 語系: ["site_language"], 中文: ["site_language"], english: ["site_language"], 繁體: ["site_language"], 簡體: ["site_language"], 多語言: ["site_language", "DEFAULT_LANGUAGE"], 切換: ["site_language"], 預設語言: ["DEFAULT_LANGUAGE"],
     時區: ["site_timezone"], 系統時區: ["site_timezone"], 時區設定: ["site_timezone"], 東八區: ["site_timezone"], 格林威治: ["site_timezone"], 跨天: ["site_timezone"], 統計口徑: ["site_timezone"], utc: ["site_timezone"], timezone: ["site_timezone"],
-    首頁: ["INDEX_PAGE_TYPE", "MAIN_PAGE_RANDOM_COUNT", "MAIN_PAGE_RECENT_COUNT"], 首頁類型: ["INDEX_PAGE_TYPE"], 主頁: ["INDEX_PAGE_TYPE"],
+    首頁: ["INDEX_PAGE_TYPE", "MAIN_PAGE_RANDOM_COUNT", "MAIN_PAGE_RECENT_COUNT"], 首頁類型: ["INDEX_PAGE_TYPE"],
+    首頁卡片: ["HOMEPAGE_CONFIG"], 自訂卡片: ["HOMEPAGE_CONFIG"], 卡片: ["HOMEPAGE_CONFIG"], 作者卡片: ["HOMEPAGE_CONFIG"], 標籤卡片: ["HOMEPAGE_CONFIG"], 叢書卡片: ["HOMEPAGE_CONFIG"], 語言卡片: ["HOMEPAGE_CONFIG"], 評分卡片: ["HOMEPAGE_CONFIG"], 主頁: ["INDEX_PAGE_TYPE"],
     項目連結: ["HIDE_PROJECT_LINKS"], 隱藏連結: ["HIDE_PROJECT_LINKS"], 開源連結: ["HIDE_PROJECT_LINKS"],
     友情連結: ["FRIENDS"], 友鏈: ["FRIENDS"], 連結: ["FRIENDS", "HIDE_PROJECT_LINKS", "douban_baseurl", "AI_API_URL", "static_host", "SITE_URL"],
     網址: ["douban_baseurl", "AI_API_URL", "static_host", "SITE_URL"], 位址: ["douban_baseurl", "AI_API_URL", "static_host", "smtp_server", "SITE_URL"],
     // 網站與外觀 · 首頁與列表
-    隨機: ["MAIN_PAGE_RANDOM_COUNT"], 推薦: ["RECOMMEND_ENABLE", "RECOMMEND_USE_CROWD", "ENABLE_BOOK_RECOMMEND_TO_OTHERS", "MAIN_PAGE_RANDOM_COUNT"], 智慧: ["RECOMMEND_ENABLE"], 智慧推薦: ["RECOMMEND_ENABLE"],
+    隨機: ["MAIN_PAGE_RANDOM_COUNT"], 推薦: ["RECOMMEND_ENABLE", "RECOMMEND_USE_CROWD", "MAIN_PAGE_RANDOM_COUNT"], 智慧: ["RECOMMEND_ENABLE"], 智慧推薦: ["RECOMMEND_ENABLE"],
     協同: ["RECOMMEND_USE_CROWD"], 協同過濾: ["RECOMMEND_USE_CROWD"], 參考他人: ["RECOMMEND_USE_CROWD"],
     新書: ["MAIN_PAGE_RECENT_COUNT", "SEND_MAIL_FOR_NEW_BOOKS"], 最新: ["MAIN_PAGE_RECENT_COUNT"], 最近更新: ["MAIN_PAGE_RECENT_COUNT"], 新書推薦: ["MAIN_PAGE_RECENT_COUNT"],
     分頁: ["DEFAULT_PAGE_SIZE"], 每頁: ["DEFAULT_PAGE_SIZE"], 每頁數量: ["DEFAULT_PAGE_SIZE"],
     側邊欄: ["SIDEBAR_ITEMS"], 側欄: ["SIDEBAR_ITEMS"], 選單: ["SIDEBAR_ITEMS"], 導覽列: ["SIDEBAR_ITEMS"], 側邊導覽: ["SIDEBAR_ITEMS"],
-    首頁顯示: ["ENABLE_HOMEPAGE_READING_STATS", "ENABLE_HOMEPAGE_READING_BOOKS", "ENABLE_HOMEPAGE_BOOKLISTS", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"], 首頁模組: ["ENABLE_HOMEPAGE_READING_STATS", "ENABLE_HOMEPAGE_READING_BOOKS", "ENABLE_HOMEPAGE_BOOKLISTS", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"],
-    統計: ["ENABLE_HOMEPAGE_READING_STATS", "ALLOW_USER_DISABLE_STATISTIC"], banner: ["ENABLE_HOMEPAGE_READING_STATS"], 閱讀統計: ["ENABLE_HOMEPAGE_READING_STATS"],
-    在讀: ["ENABLE_HOMEPAGE_READING_BOOKS"], 正在閱讀: ["ENABLE_HOMEPAGE_READING_BOOKS"],
-    書單: ["ENABLE_HOMEPAGE_BOOKLISTS", "BOOK_NAV"], 書單推薦: ["ENABLE_HOMEPAGE_BOOKLISTS"], 推薦書單: ["ENABLE_HOMEPAGE_BOOKLISTS"],
-    推薦給他人: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS"], 他人推薦: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS"],
+    首頁顯示: ["HOMEPAGE_CONFIG"], 首頁模組: ["HOMEPAGE_CONFIG"],
+    統計: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], banner: ["HOMEPAGE_CONFIG"], 閱讀統計: ["HOMEPAGE_CONFIG"],
+    在讀: ["HOMEPAGE_CONFIG"], 正在閱讀: ["HOMEPAGE_CONFIG"],
+    書單: ["HOMEPAGE_CONFIG", "BOOK_NAV"], 書單推薦: ["HOMEPAGE_CONFIG"], 推薦書單: ["HOMEPAGE_CONFIG"],
+    推薦給他人: ["HOMEPAGE_CONFIG"], 他人推薦: ["HOMEPAGE_CONFIG"],
     // 網站與外觀 · 書籍分類
     分類: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER", "ENABLE_FOLDER_BROWSE", "AI_ALLOW_SET_CATEGORY"], 導覽: ["BOOK_NAV"], 標籤: ["BOOK_NAV"],
     分類導覽: ["BOOK_NAV"], 分類管理: ["BOOK_NAV"], 分類樹: ["BOOK_NAV"],
@@ -1315,7 +1324,7 @@ const SEARCH_ALIASES = {
     生詞: ["READER_MYDICTS"], 查詞: ["READER_MYDICTS"], 劃詞: ["READER_MYDICTS"],
     百科: ["READER_DICT_BAIKE_ENABLED"], 百度百科: ["READER_DICT_BAIKE_ENABLED"],
     // 閱讀與內容 · 書評與互動
-    評論: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"], 評分: ["ENABLE_BOOK_REVIEW"], 書評: ["ENABLE_BOOK_REVIEW"], 打分: ["ENABLE_BOOK_REVIEW"], 星等: ["ENABLE_BOOK_REVIEW"],
+    評論: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL"], 評分: ["ENABLE_BOOK_REVIEW"], 書評: ["ENABLE_BOOK_REVIEW"], 打分: ["ENABLE_BOOK_REVIEW"], 星等: ["ENABLE_BOOK_REVIEW"],
     審核: ["REVIEW_REQUIRES_APPROVAL", "ENABLE_AUTO_NEW_USER_APPROVAL"], 先審後發: ["REVIEW_REQUIRES_APPROVAL"],
     // 閱讀與內容 · 實體書與圖章
     實體書: ["ENABLE_PHYSICAL_BOOKS", "ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], 紙書: ["ENABLE_PHYSICAL_BOOKS"], 紙本書: ["ENABLE_PHYSICAL_BOOKS"], 書架: ["ENABLE_PHYSICAL_BOOKS"], 印刷: ["ENABLE_PHYSICAL_BOOKS"],
@@ -1425,22 +1434,23 @@ const SEARCH_ALIASES = {
     header: ["HEADER"], announcement: ["HEADER"], notice: ["HEADER"], "site header": ["HEADER"],
     footer: ["FOOTER"], copyright: ["FOOTER"], watermark: ["FOOTER_WATERMARK"],
     language: ["site_language", "DEFAULT_LANGUAGE"], languages: ["site_language"], locale: ["site_language"], i18n: ["site_language"], multilingual: ["site_language"], english: ["site_language"], chinese: ["site_language"], traditional: ["site_language"], simplified: ["site_language"], "default language": ["DEFAULT_LANGUAGE"],
-    timezone: ["site_timezone"], "time zone": ["site_timezone"], tz: ["site_timezone"], utc: ["site_timezone"], gmt: ["site_timezone"], offset: ["site_timezone"], "day boundary": ["site_timezone"], streak: ["site_timezone", "ENABLE_HOMEPAGE_READING_STATS"],
-    homepage: ["INDEX_PAGE_TYPE", "MAIN_PAGE_RANDOM_COUNT", "MAIN_PAGE_RECENT_COUNT"], "index page": ["INDEX_PAGE_TYPE"], "page type": ["INDEX_PAGE_TYPE"], landing: ["INDEX_PAGE_TYPE"],
+    timezone: ["site_timezone"], "time zone": ["site_timezone"], tz: ["site_timezone"], utc: ["site_timezone"], gmt: ["site_timezone"], offset: ["site_timezone"], "day boundary": ["site_timezone"], streak: ["site_timezone", "HOMEPAGE_CONFIG"],
+    homepage: ["INDEX_PAGE_TYPE", "MAIN_PAGE_RANDOM_COUNT", "MAIN_PAGE_RECENT_COUNT", "HOMEPAGE_CONFIG"], "index page": ["INDEX_PAGE_TYPE"], "page type": ["INDEX_PAGE_TYPE"], landing: ["INDEX_PAGE_TYPE"],
+    "homepage cards": ["HOMEPAGE_CONFIG"], "custom cards": ["HOMEPAGE_CONFIG"], "home cards": ["HOMEPAGE_CONFIG"], "author card": ["HOMEPAGE_CONFIG"], "tag card": ["HOMEPAGE_CONFIG"], "series card": ["HOMEPAGE_CONFIG"], "language card": ["HOMEPAGE_CONFIG"], "rating card": ["HOMEPAGE_CONFIG"],
     links: ["FRIENDS", "HIDE_PROJECT_LINKS", "douban_baseurl", "AI_API_URL", "static_host"], link: ["FRIENDS", "HIDE_PROJECT_LINKS", "douban_baseurl", "AI_API_URL", "static_host", "SITE_URL"], "friend links": ["FRIENDS"], friends: ["FRIENDS"], "project links": ["HIDE_PROJECT_LINKS"], "hide links": ["HIDE_PROJECT_LINKS"],
     url: ["AI_API_URL", "douban_baseurl", "static_host", "SITE_URL"], address: ["douban_baseurl", "AI_API_URL", "static_host", "smtp_server", "SITE_URL"], endpoint: ["AI_API_URL", "douban_baseurl"],
     // Site & Appearance · home & listing
     random: ["MAIN_PAGE_RANDOM_COUNT"], shuffle: ["MAIN_PAGE_RANDOM_COUNT"],
-    recommend: ["RECOMMEND_ENABLE", "RECOMMEND_USE_CROWD", "ENABLE_BOOK_RECOMMEND_TO_OTHERS", "MAIN_PAGE_RANDOM_COUNT"], recommendation: ["RECOMMEND_ENABLE"], recommendations: ["RECOMMEND_ENABLE"], smart: ["RECOMMEND_ENABLE"], recommender: ["RECOMMEND_ENABLE"],
+    recommend: ["RECOMMEND_ENABLE", "RECOMMEND_USE_CROWD", "MAIN_PAGE_RANDOM_COUNT", "HOMEPAGE_CONFIG"], recommendation: ["RECOMMEND_ENABLE"], recommendations: ["RECOMMEND_ENABLE"], smart: ["RECOMMEND_ENABLE"], recommender: ["RECOMMEND_ENABLE"],
     crowd: ["RECOMMEND_USE_CROWD"], collaborative: ["RECOMMEND_USE_CROWD"], "other users": ["RECOMMEND_USE_CROWD"], community: ["RECOMMEND_USE_CROWD"],
     recent: ["MAIN_PAGE_RECENT_COUNT"], latest: ["MAIN_PAGE_RECENT_COUNT"], newest: ["MAIN_PAGE_RECENT_COUNT"], "new books": ["MAIN_PAGE_RECENT_COUNT", "SEND_MAIL_FOR_NEW_BOOKS"],
     pagination: ["DEFAULT_PAGE_SIZE"], "page size": ["DEFAULT_PAGE_SIZE"], "per page": ["DEFAULT_PAGE_SIZE"], "items per page": ["DEFAULT_PAGE_SIZE"],
     sidebar: ["SIDEBAR_ITEMS"], menu: ["SIDEBAR_ITEMS"], navigation: ["SIDEBAR_ITEMS"], nav: ["SIDEBAR_ITEMS", "BOOK_NAV"],
-    "homepage display": ["ENABLE_HOMEPAGE_READING_STATS", "ENABLE_HOMEPAGE_READING_BOOKS", "ENABLE_HOMEPAGE_BOOKLISTS", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"], widgets: ["ENABLE_HOMEPAGE_READING_STATS", "ENABLE_HOMEPAGE_READING_BOOKS", "ENABLE_HOMEPAGE_BOOKLISTS", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"],
-    stats: ["ENABLE_HOMEPAGE_READING_STATS", "ALLOW_USER_DISABLE_STATISTIC"], statistics: ["ENABLE_HOMEPAGE_READING_STATS", "ALLOW_USER_DISABLE_STATISTIC"], "reading stats": ["ENABLE_HOMEPAGE_READING_STATS"], banner: ["ENABLE_HOMEPAGE_READING_STATS"],
-    "currently reading": ["ENABLE_HOMEPAGE_READING_BOOKS"], "reading now": ["ENABLE_HOMEPAGE_READING_BOOKS"], "in progress": ["ENABLE_HOMEPAGE_READING_BOOKS"],
-    booklist: ["ENABLE_HOMEPAGE_BOOKLISTS", "BOOK_NAV"], "book list": ["ENABLE_HOMEPAGE_BOOKLISTS", "BOOK_NAV"], collections: ["ENABLE_HOMEPAGE_BOOKLISTS"], featured: ["ENABLE_HOMEPAGE_BOOKLISTS"],
-    "recommend to others": ["ENABLE_BOOK_RECOMMEND_TO_OTHERS"], "share books": ["ENABLE_BOOK_RECOMMEND_TO_OTHERS"],
+    "homepage display": ["HOMEPAGE_CONFIG"], widgets: ["HOMEPAGE_CONFIG"],
+    stats: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], statistics: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], "reading stats": ["HOMEPAGE_CONFIG"], banner: ["HOMEPAGE_CONFIG"],
+    "currently reading": ["HOMEPAGE_CONFIG"], "reading now": ["HOMEPAGE_CONFIG"], "in progress": ["HOMEPAGE_CONFIG"],
+    booklist: ["HOMEPAGE_CONFIG", "BOOK_NAV"], "book list": ["HOMEPAGE_CONFIG", "BOOK_NAV"], collections: ["HOMEPAGE_CONFIG"], featured: ["HOMEPAGE_CONFIG"],
+    "recommend to others": ["HOMEPAGE_CONFIG"], "share books": ["HOMEPAGE_CONFIG"],
     // Site & Appearance · categories
     category: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER", "AI_ALLOW_SET_CATEGORY"], categories: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER"], categorize: ["AI_ALLOW_SET_CATEGORY"], tag: ["BOOK_NAV"], tags: ["BOOK_NAV"],
     // Reading & Content · reader & sync
@@ -1455,7 +1465,7 @@ const SEARCH_ALIASES = {
     translate: ["READER_MYDICTS", "READER_DICT_MYBOOKS_ENABLED", "READER_DICT_BAIKE_ENABLED"], translation: ["READER_MYDICTS", "READER_DICT_MYBOOKS_ENABLED", "READER_DICT_BAIKE_ENABLED"], vocabulary: ["READER_MYDICTS"], "word lookup": ["READER_MYDICTS"], lookup: ["READER_MYDICTS"],
     encyclopedia: ["READER_DICT_BAIKE_ENABLED"], baike: ["READER_DICT_BAIKE_ENABLED"], baidu: ["READER_DICT_BAIKE_ENABLED"], wiki: ["READER_DICT_BAIKE_ENABLED"],
     // Reading & Content · reviews
-    review: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL", "ENABLE_BOOK_RECOMMEND_TO_OTHERS"], reviews: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL"], rating: ["ENABLE_BOOK_REVIEW"], rate: ["ENABLE_BOOK_REVIEW"], comment: ["ENABLE_BOOK_REVIEW"], comments: ["ENABLE_BOOK_REVIEW"], stars: ["ENABLE_BOOK_REVIEW"],
+    review: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL"], reviews: ["ENABLE_BOOK_REVIEW", "REVIEW_REQUIRES_APPROVAL"], rating: ["ENABLE_BOOK_REVIEW"], rate: ["ENABLE_BOOK_REVIEW"], comment: ["ENABLE_BOOK_REVIEW"], comments: ["ENABLE_BOOK_REVIEW"], stars: ["ENABLE_BOOK_REVIEW"],
     approve: ["REVIEW_REQUIRES_APPROVAL", "ENABLE_AUTO_NEW_USER_APPROVAL"], moderate: ["REVIEW_REQUIRES_APPROVAL"], moderation: ["REVIEW_REQUIRES_APPROVAL"],
     // Reading & Content · physical books & stamp
     physical: ["ENABLE_PHYSICAL_BOOKS", "ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], hardcopy: ["ENABLE_PHYSICAL_BOOKS"], print: ["ENABLE_PHYSICAL_BOOKS"], printed: ["ENABLE_PHYSICAL_BOOKS"], "paper books": ["ENABLE_PHYSICAL_BOOKS"], shelf: ["ENABLE_PHYSICAL_BOOKS"], bookshelf: ["ENABLE_PHYSICAL_BOOKS"],
@@ -1597,6 +1607,7 @@ export default {
     "reading-range-dialog": ReadingRangeDialog,
     "book-nav-editor": BookNavEditor,
     "reader-dict-editor": ReaderDictEditor,
+    "homepage-cards-editor": HomepageCardsEditor,
   },
   created() {
     // 为body添加settings-page类名，应用背景图样式
@@ -1764,12 +1775,14 @@ export default {
                   { value: "memo", text: "appHeader.memo" },
                 ],
               },
-              { icon: "mdi-eye-outline", key: "homepage-display-heading", label: "settings.homepage_display", type: "subtitle" },
-              { icon: "mdi-chart-line", key: "ENABLE_HOMEPAGE_READING_STATS", label: "settings.enable_homepage_reading_stats", type: "checkbox", half: true },
-              { icon: "mdi-book-open-page-variant-outline", key: "ENABLE_HOMEPAGE_READING_BOOKS", label: "settings.enable_homepage_reading_books", type: "checkbox", half: true },
-              { icon: "mdi-format-list-bulleted-square", key: "ENABLE_HOMEPAGE_BOOKLISTS", label: "settings.enable_homepage_booklists", type: "checkbox", half: true },
-              { icon: "mdi-thumb-up-outline", key: "ENABLE_BOOK_RECOMMEND_TO_OTHERS", label: "settings.enable_book_recommend_to_others", type: "checkbox", half: true },
             ],
+          },
+          {
+            id: "site-home-cards",
+            icon: "mdi-view-grid-plus-outline",
+            title: "settings.sec_site_home_cards",
+            desc: "settings.sec_site_home_cards_desc",
+            special: "homepage_cards",
           },
           {
             id: "site-cats",
@@ -2419,6 +2432,11 @@ export default {
       this.site_url = rsp.site_url;
 
       if (this.settings) {
+        this.$set(
+          this.settings,
+          "HOMEPAGE_CONFIG",
+          normalizeHomepageConfig(this.settings["HOMEPAGE_CONFIG"])
+        );
         if (this.settings["site_language"] === "") {
           this.$set(this.settings, "site_language", this.$i18n.locale);
         }
@@ -2793,6 +2811,7 @@ export default {
       window.addEventListener("resize", this.positionSegIndicator);
       window.addEventListener("beforeunload", this.handleBeforeUnload);
       this.watchAppBar();
+      this.$nextTick(() => this.scrollToRouteHash());
     }
   },
   beforeDestroy() {
@@ -2967,6 +2986,18 @@ export default {
           void el.offsetWidth;
           el.classList.add("field-flash");
         }, 100);
+      });
+    },
+    scrollToRouteHash() {
+      const hash = this.$route && this.$route.hash;
+      const matched = hash && hash.match(/^#sec-([^-]+)-(.+)$/);
+      if (!matched) return;
+      const gid = matched[1];
+      const sid = matched[2];
+      this.activeGroup = gid;
+      this.$nextTick(() => {
+        const el = document.getElementById("sec-" + gid + "-" + sid);
+        if (el) el.scrollIntoView({ behavior: "smooth", block: "start" });
       });
     },
     openDefaultReadRangeDialog() {
