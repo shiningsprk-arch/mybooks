@@ -1,7 +1,9 @@
 #!/usr/bin/env python3
 
 import unittest
+from unittest import mock
 
+from webserver.base import homepage as homepage_module
 from webserver.base.homepage import (
     BUILTIN_SECTIONS,
     MAX_CUSTOM_CARDS,
@@ -124,6 +126,42 @@ class TestHomepageConfig(unittest.TestCase):
     def test_legacy_defaults_hide_booklists(self):
         config = homepage_from_legacy({})
         self.assertEqual(config["hidden"], ["index.booklistRecommendation"])
+
+
+class TestGetHomepageConfig(unittest.TestCase):
+    """接线层：get_homepage_config 的两条分支（磁盘配置优先 / 无配置回退旧开关）。"""
+
+    def test_stored_config_wins(self):
+        stored = {"order": ["index.myReading"], "hidden": ["index.myReading"], "custom": []}
+        with mock.patch(
+            "webserver.loader.get_settings", return_value={"HOMEPAGE_CONFIG": stored}
+        ):
+            config = homepage_module.get_homepage_config()
+        self.assertEqual(config["order"][0], "index.myReading")
+        self.assertEqual(config["hidden"], ["index.myReading"])
+
+    def test_falls_back_to_legacy_when_missing(self):
+        settings = {
+            "ENABLE_HOMEPAGE_READING_STATS": False,
+            "ENABLE_HOMEPAGE_BOOKLISTS": True,
+        }
+        with mock.patch("webserver.loader.get_settings", return_value=settings):
+            config = homepage_module.get_homepage_config()
+        self.assertEqual(config["hidden"], ["readingStats"])
+
+    def test_non_dict_stored_config_falls_back_to_legacy(self):
+        """auto.py 被手改成字符串/列表时不能当作"全部可见"。"""
+        settings = {"HOMEPAGE_CONFIG": "oops", "ENABLE_HOMEPAGE_BOOKLISTS": False}
+        with mock.patch("webserver.loader.get_settings", return_value=settings):
+            config = homepage_module.get_homepage_config()
+        self.assertEqual(config["hidden"], ["index.booklistRecommendation"])
+
+    def test_homepage_route_is_registered(self):
+        from webserver.handlers import book as book_module
+
+        paths = [rule[0] for rule in book_module.routes()]
+        self.assertIn(r"/api/homepage", paths)
+        self.assertIn(r"/api/index", paths)
 
 
 if __name__ == "__main__":

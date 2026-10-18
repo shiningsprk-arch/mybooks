@@ -2,7 +2,7 @@
   <div class="homepage-cards-editor pl-6">
     <div class="d-flex align-center mb-2">
       <v-icon small class="mr-2">mdi-view-grid-outline</v-icon>
-      <span class="text-body-1">{{ $t("settings.homepage_builtin") }}</span>
+      <span class="text-body-1">{{ $t("settings.homepage_order_title") }}</span>
     </div>
     <v-list dense class="homepage-section-list">
       <v-list-item
@@ -11,6 +11,7 @@
         class="px-0"
         :class="{ 'homepage-section-drag-over': dragOverSection === section }"
         @dragover.prevent.native="onSectionDragOver(section)"
+        @dragleave.native="onSectionDragLeave(section)"
         @drop.prevent.native="onSectionDrop(section)"
       >
         <v-list-item-action class="mr-1">
@@ -87,10 +88,12 @@
               v-model="card.value"
               :items="valueItems(card)"
               :label="$t('settings.homepage_card_value')"
+              :error="!card.value"
               dense
               outlined
-              hide-details
+              hide-details="auto"
               clearable
+              @focus="ensureSeriesLoaded(card)"
               @update:search-input="(q) => onValueSearch(card, q)"
             ></v-combobox>
             <v-select
@@ -98,19 +101,24 @@
               v-model="card.value"
               :items="languageItems"
               :label="$t('settings.homepage_card_value')"
+              :error="!card.value"
               dense
               outlined
-              hide-details
+              hide-details="auto"
             ></v-select>
             <v-select
               v-else
               v-model="card.value"
               :items="ratingItems"
               :label="$t('settings.homepage_card_value')"
+              :error="!card.value"
               dense
               outlined
-              hide-details
+              hide-details="auto"
             ></v-select>
+            <p v-if="!card.value" class="error--text text-caption mb-0 mt-1">
+              {{ $t("settings.homepage_card_value_required") }}
+            </p>
           </v-col>
           <v-col cols="6" sm="4">
             <v-select
@@ -187,6 +195,7 @@ export default {
       authorItems: [],
       tagItems: [],
       seriesItems: [],
+      seriesLoaded: false,
       languageItems: [],
       searchTimers: {},
       searchSeq: { author: 0, tag: 0 },
@@ -233,7 +242,7 @@ export default {
     },
   },
   mounted() {
-    this.loadSeries();
+    // 丛书列表可能上千条（/series?show=all 一次返回全部），等到真正编辑丛书卡时再拉
     this.loadLanguages();
   },
   beforeDestroy() {
@@ -292,6 +301,11 @@ export default {
         this.dragOverSection = section;
       }
     },
+    onSectionDragLeave(section) {
+      if (this.dragOverSection === section) {
+        this.dragOverSection = null;
+      }
+    },
     onSectionDrop(section) {
       const from = this.local.order.indexOf(this.dragSection);
       const to = this.local.order.indexOf(section);
@@ -344,17 +358,28 @@ export default {
           const names = (items || []).map((item) => item.name);
           if (key === "author") this.authorItems = names;
           else this.tagItems = names;
+        }).catch(() => {
+          // 联想输入失败不该弹全局错误，也不是致命问题
         });
       }, 300);
+    },
+    ensureSeriesLoaded(card) {
+      if (!card || card.type !== "series" || this.seriesLoaded) return;
+      this.seriesLoaded = true;
+      this.loadSeries();
     },
     loadSeries() {
       this.$backend("/series?show=all").then((rsp) => {
         if (rsp.err === "ok") this.seriesItems = (rsp.items || []).map((item) => item.name);
+      }).catch(() => {
+        this.seriesLoaded = false;
       });
     },
     loadLanguages() {
       this.$backend("/language?show=all").then((rsp) => {
         if (rsp.err === "ok") this.languageItems = (rsp.items || []).map((item) => item.name);
+      }).catch(() => {
+        // 语言列表拿不到时仍可手填，静默失败
       });
     },
     addCard() {

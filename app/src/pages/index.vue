@@ -315,8 +315,10 @@ export default {
         },
         homepageConfigNormalized() {
             if (!this.homepageConfig) {
+                // 拿不到配置（旧后端 / 接口失败）时按老站点的默认可见性兜底：
+                // 书单卡默认关闭、其余内置卡可见，而不是把首页整页隐藏
                 const fallback = defaultHomepageConfig();
-                fallback.hidden = fallback.order.slice();
+                fallback.hidden = ["index.booklistRecommendation"];
                 return fallback;
             }
             return normalizeHomepageConfig(this.homepageConfig);
@@ -342,8 +344,10 @@ export default {
             if (this.isSectionEnabled('index.newRecommendation') && this.new_books.length > 0) return true;
             return false;
         },
-        customCardsHaveBooks() {
-            return Object.keys(this.customCardBooks).some((key) => this.customCardBooks[key]);
+        customCardsHaveContent() {
+            // 配置了并且填了内容的卡片一定会渲染出外壳（0 结果也会显示"暂无书籍"），
+            // "有没有书"不再等价于"有没有内容"
+            return this.enabledCustomCards.length > 0;
         },
         customCardsLoading() {
             return Object.keys(this.customCardLoading).some((key) => this.customCardLoading[key]);
@@ -362,7 +366,7 @@ export default {
         },
         showEmptyState() {
             if (this.homeLoading) return false;
-            return !this.builtinHasContent && !this.customCardsHaveBooks;
+            return !this.builtinHasContent && !this.customCardsHaveContent;
         },
         indexPage() {
             return this.$store.state.sys && this.$store.state.sys.indexPage;
@@ -617,16 +621,13 @@ export default {
         if ( res !== undefined ) {
             res.setHeader('Cache-Control', 'no-cache');
         }
-        const [indexRsp, homepageRsp] = await Promise.all([
-            app.$backend("/index"),
-            app.$backend("/homepage").catch(() => null),
-        ]);
-        const homepageConfig = homepageRsp && homepageRsp.err === 'ok'
-            ? homepageRsp.config
-            : (indexRsp && indexRsp.homepage);
+        // /api/index 的每个返回分支都带归一化后的 homepage 配置，无需再请求 /homepage。
+        // 旧后端没有该字段时 homepageConfig 为 null，computed 里回退到老站点默认可见性；
+        // 额外请求 /homepage 在旧后端会 404 并弹出全局错误框，所以不做探测。
+        const { homepage, ...indexRsp } = (await app.$backend("/index")) || {};
         return {
             ...indexRsp,
-            homepageConfig: homepageConfig || null,
+            homepageConfig: homepage || null,
         };
     },
     data: () => ({

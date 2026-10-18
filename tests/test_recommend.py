@@ -9,6 +9,7 @@ import datetime
 import random
 import time
 import unittest
+from unittest import mock
 
 from sqlalchemy import create_engine
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -175,6 +176,14 @@ class TestSampledRecommender(unittest.TestCase):
         scored = [(book(i), 0.5) for i in range(20)]
         picked = weighted_sample(scored, 10, 0.35, random.Random(0))
         self.assertEqual(len({b.book_id for b, _ in picked}), 10)
+
+    def test_pool_skips_scoring_when_card_hidden(self):
+        """n<=0 时不应再对全库逐本打分（隐藏"随便推荐"卡要省掉最贵的一段）。"""
+        features = library(*[book(i) for i in range(1, 51)])
+        scorer = mock.Mock(wraps=FixedScorer({}))
+        rec = SampledRecommender(RecommendConfig(), scorer)
+        self.assertEqual(rec.pool(features, ctx(), 0), [])
+        scorer.score.assert_not_called()
 
 
 def engagement(reader_id, book_id, **kwargs):

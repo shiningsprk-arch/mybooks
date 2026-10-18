@@ -43,6 +43,26 @@ class TestMetaBooks(unittest.TestCase):
         result = make_handler()._sorted_ids({1, 2, 3, 4}, "tag", "random")
         self.assertEqual(sorted(result), [1, 2, 3, 4])
 
+    def test_invalid_rating_returns_empty_without_raising(self):
+        """公开路由 /api/rating/<name>：非 1-5 整数不能让 int() 抛给 @js。"""
+        handler = make_handler()
+        for bad in ("abc", "0", "6", "", "4.5"):
+            self.assertEqual(handler._book_ids("rating", bad), set(), bad)
+
+    def test_rating_reads_ratings_table_and_unions_categories(self):
+        """rating 走 ratings 表的 0-10 原始分值（4 星 = 7/8），再按 item id 取书。"""
+        handler = make_handler()
+        handler.calibre_db_cache.backend = mock.Mock()
+        handler.calibre_db_cache.backend.conn.get = mock.Mock(return_value=[(3,), (2,)])
+        handler.calibre_db = mock.Mock()
+        handler.calibre_db.get_books_for_category = (
+            lambda category, item_id: {1, 2} if item_id == 2 else {3}
+        )
+        self.assertEqual(handler._book_ids("rating", "4"), {1, 2, 3})
+        sql, params = handler.calibre_db_cache.backend.conn.get.call_args.args
+        self.assertIn("FROM ratings", sql)
+        self.assertEqual(params, (7, 8))
+
     def test_get_pages_ids_instead_of_loading_all_books(self):
         handler = make_handler()
         handler.get_argument = lambda name, default=None: {

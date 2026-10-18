@@ -215,7 +215,12 @@ class MetaBooks(ListHandler):
         category = meta + "s" if meta in ["tag", "author", "language"] else meta
         extra_ids = None
         if meta == "rating":
-            star = int(name)
+            # 公开路由，name 来自 URL/自定义卡片配置：非 1-5 的整数直接视为无匹配，
+            # 不能让 int() 的 ValueError 冒泡到 @js（会把 traceback 回显给游客）
+            star = int(name) if name.isdigit() else 0
+            if not 1 <= star <= 5:
+                logging.info(f"Ignore invalid rating: {name}")
+                return set()
             raw_values = (star * 2 - 1, star * 2)
             ids = set()
             rows = self.calibre_db_cache.backend.conn.get(

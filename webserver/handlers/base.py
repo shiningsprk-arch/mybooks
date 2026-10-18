@@ -1762,7 +1762,12 @@ class ListHandler(BaseHandler):
             max_size = min(max_size, 60)
         if perf.lite_on("LITE_LIST_SLIM"):
             include_comments = False
-        size = min(int(self.get_argument("size", "0").strip()), max_size)
+        try:
+            size = int(self.get_argument("size", "0").strip())
+        except (TypeError, ValueError):
+            # 公开列表接口，size 来自 URL：非法值按默认分页处理，不要抛 ValueError
+            size = 0
+        size = min(max(size, 0), max_size)
         delta = min(size if size > 0 else max(page_size, 60), max_size)
 
         if ids:

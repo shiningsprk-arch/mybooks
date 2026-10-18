@@ -1,7 +1,7 @@
 <template>
     <div
         class="home-section-card"
-        :class="{ 'home-section-card--collapsed': !expanded, 'home-section-card--drag-over': dragOver }"
+        :class="{ 'home-section-card--collapsed': !expanded }"
     >
         <v-row>
             <v-col cols="12">
@@ -10,15 +10,6 @@
                     :title="expanded ? $t('common.collapse') : $t('common.expand')"
                     @click="toggle"
                 >
-                    <v-icon
-                        v-if="sortable"
-                        class="home-section-card-handle mr-1"
-                        draggable="true"
-                        :title="$t('common.dragToReorder')"
-                        @click.stop
-                        @dragstart="$emit('drag-start', $event)"
-                        @dragend="$emit('drag-end', $event)"
-                    >mdi-drag</v-icon>
                     <v-icon small class="mr-1">{{ icon }}</v-icon>
                     <p class="ma-0">{{ title }}</p>
                     <span @click.stop><slot name="header-extra"></slot></span>
@@ -59,15 +50,6 @@ export default {
         defaultExpanded: {
             type: Boolean,
             default: true,
-        },
-        sortable: {
-            type: Boolean,
-            default: false,
-        },
-        // 由父页面在拖拽经过本卡片时置 true，用于显示放置目标的视觉反馈
-        dragOver: {
-            type: Boolean,
-            default: false,
         },
     },
     data() {
@@ -131,20 +113,7 @@ export default {
     padding-bottom: 12px;
 }
 
-.home-section-card--drag-over {
-    outline: 2px dashed #1976d2;
-    outline-offset: 2px;
-}
-
 .home-section-card-header {
     cursor: pointer;
-}
-
-.home-section-card-handle {
-    cursor: grab;
-}
-
-.home-section-card-handle:active {
-    cursor: grabbing;
 }
 </style>

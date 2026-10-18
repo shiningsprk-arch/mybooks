@@ -145,6 +145,8 @@ def get_homepage_config():
 
     settings = loader.get_settings()
     raw = settings.get(HOMEPAGE_KEY)
-    if not raw:
+    # 没配过、或 auto.py 里被手改成非 dict：都回退到旧开关推导，
+    # 否则 normalize_homepage 会返回"全部可见"，让默认关闭的卡片突然出现
+    if not isinstance(raw, dict) or not raw:
         return homepage_from_legacy(settings)
     return normalize_homepage(raw)

@@ -119,6 +119,24 @@ class TestAdminSettingsPost(unittest.TestCase):
         self.assertNotIn("ENABLE_BOOK_RECOMMEND_TO_OTHERS", saved)
         self.assertEqual(saved["HOMEPAGE_CONFIG"]["custom"][0]["value"], "刘慈欣")
 
+    def test_hiding_social_card_does_not_touch_global_recommend_flag(self):
+        """隐藏首页"他人推荐"卡不能反写 ENABLE_BOOK_RECOMMEND_TO_OTHERS。
+
+        该 flag 还管"评价是否计入推荐人数/详情页推荐"，一旦被卡片开关连带关掉，
+        首页卡片就永远取不到数据、且界面上已无入口能把它打开。
+        """
+        rsp, saved = self.post(
+            {
+                "HOMEPAGE_CONFIG": {
+                    "hidden": ["index.socialRecommendation"],
+                    "custom": [],
+                }
+            }
+        )
+        self.assertEqual("ok", rsp["err"])
+        self.assertNotIn("ENABLE_BOOK_RECOMMEND_TO_OTHERS", saved)
+        self.assertIn("index.socialRecommendation", saved["HOMEPAGE_CONFIG"]["hidden"])
+
     def test_homepage_random_card_keeps_count_when_visible(self):
         rsp, saved = self.post(
             {

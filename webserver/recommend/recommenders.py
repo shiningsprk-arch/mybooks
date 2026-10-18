@@ -87,6 +87,10 @@ class SampledRecommender:
         return max(self.config.pool_size, n * SAMPLE_POOL_FACTOR * 2)
 
     def pool(self, features: Dict[int, BookFeatures], ctx: RecommendContext, n: int) -> List[Scored]:
+        if n <= 0:
+            # 卡片被隐藏时不需要打分；与 NewBooksRecommender.pool 保持一致，
+            # 否则隐藏"随便推荐"仍会对全库逐本调用 scorer.score
+            return []
         scored = ((b, self.scorer.score(b, ctx)) for b in features.values() if ctx.accepts(b))
         return heapq.nlargest(self.pool_size(n), scored, key=lambda x: (x[1], -x[0].book_id))
 

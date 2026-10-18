@@ -1,6 +1,5 @@
 <template>
   <home-section-card
-    v-if="loading || books.length || error"
     :icon="icon"
     :title="title"
     :storage-key="'custom:' + card.id"
@@ -22,6 +21,11 @@
     <v-row v-else-if="error">
       <v-col cols="12">
         <p class="grey--text text-body-2 mb-0">{{ $t("index.customCardError") }}</p>
+      </v-col>
+    </v-row>
+    <v-row v-else-if="books.length === 0">
+      <v-col cols="12">
+        <p class="grey--text text-body-2 mb-0">{{ $t("index.customCardEmpty") }}</p>
       </v-col>
     </v-row>
     <v-row v-else>
@@ -90,12 +94,17 @@ export default {
   mounted() {
     this.loadBooks();
   },
+  beforeDestroy() {
+    // 晚到的响应不要再写进已销毁的实例
+    this.loadSeq += 1;
+  },
   methods: {
     async loadBooks() {
       const seq = ++this.loadSeq;
       if (!this.card.value) {
         this.books = [];
         this.error = false;
+        this.loading = false;
         this.$emit("state", { hasBooks: false, loading: false });
         return;
       }

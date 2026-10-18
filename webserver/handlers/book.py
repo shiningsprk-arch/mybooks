@@ -18,15 +18,6 @@ from typing import Optional
 from concurrent.futures import ThreadPoolExecutor
 from webserver.i18n import _
 
-
-def _load_jieba():
-    try:
-        import jieba
-        return jieba
-    except ImportError:
-        return None
-
-
 import tornado.escape
 from tornado import web
 from sqlalchemy import func
@@ -72,6 +63,14 @@ from webserver.constants import CALIBRE_COLUMN_DYNAMIC_COVER, COLUMN_DYNAMIC_COV
 from webserver.constants import CALIBRE_COLUMN_TRANSLATORS, COLUMN_TRANSLATORS
 
 
+def _load_jieba():
+    try:
+        import jieba
+        return jieba
+    except ImportError:
+        return None
+
+
 CONF = loader.get_settings()
 
 
@@ -95,10 +94,12 @@ class Index(BaseHandler):
 
     async def _social_recommend_books(self):
         """首页"其他用户推荐"：最近 90 天内被评价（且状态通过）的书，见 plan §2.3。
-        仅登录且个人偏好 show_home_recommendations=True 时才计算，游客/关闭时返回空列表。"""
+        仅登录且个人偏好 show_home_recommendations=True 时才计算，游客/关闭时返回空列表。
+
+        是否展示这张卡由 HOMEPAGE_CONFIG 决定（见 homepage_from_legacy：老站点的
+        ENABLE_BOOK_RECOMMEND_TO_OTHERS 只用于推导初始可见性）。这个 flag 继续管
+        "评价是否计入推荐人数/详情页推荐"，不再反过来让首页卡片永远取不到数据。"""
         if not CONF.get("ENABLE_BOOK_REVIEW", True) or perf.lite_on("LITE_NO_RECOMMEND"):
-            return []
-        if not CONF.get("ENABLE_BOOK_RECOMMEND_TO_OTHERS", True):
             return []
         if not self.current_user or not getattr(self.current_user, "show_home_recommendations", True):
             return []
