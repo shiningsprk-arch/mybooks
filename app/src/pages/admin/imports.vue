@@ -175,7 +175,7 @@
             item-key="hash"
             :search="search"
             :headers="headers"
-            :items="items"
+            :items="visibleItems"
             :options.sync="options"
             :server-items-length="total"
             sort-by="create_time"
@@ -299,7 +299,7 @@
             @confirm="runBulkDelete"
         >
             <p>{{ $t('imports.bulk_delete_desc', { count: bulkSelectedCount, status: bulkStatusLabel }) }}</p>
-            <p>{{ $t('imports.bulk_delete_audiobook_note') }}</p>
+            <p v-if="$store.state.sys.allow.audiobooks">{{ $t('imports.bulk_delete_audiobook_note') }}</p>
             <v-checkbox
                 v-model="bulkDeleteFiles"
                 :label="$t('imports.bulk_delete_files_option')"
@@ -394,6 +394,11 @@ export default {
     computed: {
         allowPhysicalBooks() {
             return !!(this.$store.state.sys && this.$store.state.sys.allow && this.$store.state.sys.allow.physical_books);
+        },
+        visibleItems() {
+            // 有声书模块关闭时，有声书导入记录（import_type=2）连同其管理操作一起隐藏
+            if (this.$store.state.sys.allow.audiobooks) return this.items;
+            return this.items.filter((item) => item.import_type !== 2);
         },
         pageCount: function () {
             return parseInt(this.total / 20);

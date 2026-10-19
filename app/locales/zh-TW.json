@@ -810,7 +810,6 @@
   },
   "settings": {
     "group_site": "網站與外觀",
-    "group_modules": "功能模組",
     "group_reading": "閱讀與內容",
     "group_users": "用戶與訪問",
     "group_import": "匯入與儲存",
@@ -1013,7 +1012,7 @@
     "enable_booklists": "啟用書單功能",
     "enable_audiobooks": "啟用有聲書功能",
     "sec_modules": "模組開關",
-    "sec_modules_desc": "關閉後，該模組在首頁、側邊欄、書籍詳情頁及相關設定中的入口都會隱藏（僅影響介面顯示，資料與後端功能不受影響）。",
+    "sec_modules_desc": "關閉後，該模組在首頁、側邊欄、書籍詳情頁及相關設定中的入口都會隱藏（僅影響介面顯示，資料與後端功能不受影響）。儲存後頁面會自動重新整理。",
     "enable_folder_browse": "啟用以目錄進行多層級分類的功能",
     "enable_book_type_convert_directly": "允許直接轉換類型，不檢查是否已有檔案及 ISBN 等條件",
     "enable_data_sync": "啟用MyReader數據同步功能 (開啟後使用MyReader帳號登錄的用戶可以同步閱讀數據)",

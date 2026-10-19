@@ -528,7 +528,6 @@
   },
   "settings": {
     "group_site": "Site & Appearance",
-    "group_modules": "Modules",
     "group_reading": "Reading & Content",
     "group_users": "Users & Access",
     "group_import": "Import & Storage",
@@ -735,7 +734,7 @@
     "enable_booklists": "Enable Booklists",
     "enable_audiobooks": "Enable Audio Books",
     "sec_modules": "Module Switches",
-    "sec_modules_desc": "When a module is off, its entries on the home page, sidebar, book detail page and related settings are hidden (display only; data and backend features are unaffected).",
+    "sec_modules_desc": "When a module is off, its entries on the home page, sidebar, book detail page and related settings are hidden (display only; data and backend features are unaffected). The page reloads automatically after saving.",
     "enable_folder_browse": "Enable multi-level classification by folders",
     "enable_book_type_convert_directly": "Allow direct book type conversion without checking for existing files, ISBNs, or other conditions",
     "enable_data_sync": "Enable MyReader Data Synchronization (Users who log in with MyReader accounts can synchronize their reading data after enabling)",

@@ -214,6 +214,10 @@
   content: "\F0E84";
 }
 
+.mdi-book-variant::before {
+  content: "\F00BF";
+}
+
 .mdi-bookmark-outline::before {
   content: "\F00C3";
 }
@@ -790,6 +794,10 @@
   content: "\F0341";
 }
 
+.mdi-login-variant::before {
+  content: "\F05FC";
+}
+
 .mdi-logout::before {
   content: "\F0343";
 }
@@ -930,6 +938,10 @@
   content: "\F0CB8";
 }
 
+.mdi-playlist-play::before {
+  content: "\F0411";
+}
+
 .mdi-playlist-plus::before {
   content: "\F0412";
 }
@@ -952,6 +964,10 @@
 
 .mdi-progress-check::before {
   content: "\F0995";
+}
+
+.mdi-puzzle-outline::before {
+  content: "\F0A66";
 }
 
 .mdi-radiobox-blank::before {
@@ -1164,6 +1180,10 @@
 
 .mdi-timer-sand::before {
   content: "\F051F";
+}
+
+.mdi-toggle-switch-outline::before {
+  content: "\F0A1A";
 }
 
 .mdi-toolbox-outline::before {

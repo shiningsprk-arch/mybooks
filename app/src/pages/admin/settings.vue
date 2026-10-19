@@ -1152,7 +1152,7 @@ const SETTING_TEXT_TYPES = ["text", "textarea", "select", "number"];
 //   · 中文词条会作为子串参与组合词匹配（「访客权限」⊃「访客」、「推送设备」⊃「推送」+「设备」），
 //     所以组合词不必逐条登记；
 //   · 值只能写本页真实存在的设置项 key（见 groups / SPECIAL_BLOCKS），写错等于白写。
-// 功能模块总开关（设置页「功能模块」分组的四个复选框）：三层词典共用
+// 功能模块总开关（「站点与外观」→「模块开关」的四个复选框）：三层词典共用
 const MODULE_TOGGLE_KEYS = ["ENABLE_BOOKLISTS", "AI_ENABLED", "ENABLE_AUDIOBOOKS", "ENABLE_PHYSICAL_BOOKS"];
 const SEARCH_ALIASES = {
   zh: {
@@ -1809,6 +1809,18 @@ export default {
             special: "homepage_cards",
           },
           {
+            id: "site-modules",
+            icon: "mdi-puzzle-outline",
+            title: "settings.sec_modules",
+            desc: "settings.sec_modules_desc",
+            fields: [
+              { icon: "mdi-playlist-play", key: "ENABLE_BOOKLISTS", label: "settings.enable_booklists", type: "checkbox" },
+              { icon: "mdi-robot", key: "AI_ENABLED", label: "settings.ai_enabled", type: "checkbox" },
+              { icon: "mdi-headphones", key: "ENABLE_AUDIOBOOKS", label: "settings.enable_audiobooks", type: "checkbox" },
+              { icon: "mdi-book-variant", key: "ENABLE_PHYSICAL_BOOKS", label: "settings.enable_physical_books", type: "checkbox" },
+            ],
+          },
+          {
             id: "site-cats",
             icon: "mdi-tag-outline",
             title: "settings.book_tags",
@@ -1822,25 +1834,6 @@ export default {
             icon: "mdi-link-variant",
             title: "settings.friend_links",
             special: "friends",
-          },
-        ],
-      },
-      {
-        id: "modules",
-        icon: "mdi-puzzle-outline",
-        title: "settings.group_modules",
-        sections: [
-          {
-            id: "modules-switch",
-            icon: "mdi-toggle-switch-outline",
-            title: "settings.sec_modules",
-            desc: "settings.sec_modules_desc",
-            fields: [
-              { icon: "mdi-playlist-play", key: "ENABLE_BOOKLISTS", label: "settings.enable_booklists", type: "checkbox" },
-              { icon: "mdi-robot", key: "AI_ENABLED", label: "settings.ai_enabled", type: "checkbox" },
-              { icon: "mdi-headphones", key: "ENABLE_AUDIOBOOKS", label: "settings.enable_audiobooks", type: "checkbox" },
-              { icon: "mdi-book-variant", key: "ENABLE_PHYSICAL_BOOKS", label: "settings.enable_physical_books", type: "checkbox" },
-            ],
           },
         ],
       },
@@ -3180,6 +3173,8 @@ export default {
         );
         return;
       }
+      // 模块开关的保存前值：成功后对比决定是否整页刷新（见下方 success 分支）
+      const beforeMods = MODULE_TOGGLE_KEYS.map((k) => this.settings[k]);
       // 规范化只作用于提交副本：BOOK_NAV 的 parse→serialize 往返不恒等，
       // 若先改写 live settings，保存失败会留下用户没动过的假 diff 且无自愈出口
       const payload = JSON.parse(JSON.stringify(this.settings));
@@ -3250,6 +3245,15 @@ export default {
         }
         this.snapshot = savedSnapshot;
         this.bookNavSnapshot = savedNav;
+        // 模块开关有变化就整页刷新：sys 快照（顶栏/侧边栏/守卫）只在页面加载时拉取，
+        // 不刷新的话保存后界面不会立即变化（用户实测反馈）
+        if (
+          process.client &&
+          MODULE_TOGGLE_KEYS.some((k, i) => this.settings[k] !== beforeMods[i])
+        ) {
+          window.location.reload();
+          return;
+        }
         this.$alert("success", rsp.msg || this.$t("settings.save_success"));
       });
     },

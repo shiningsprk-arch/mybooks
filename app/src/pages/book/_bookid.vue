@@ -335,7 +335,7 @@
                                     <v-icon>{{ book.sole ? 'mdi-earth-off' : 'mdi-earth' }}</v-icon>
                                     {{ book.sole ? $t('book.setPublic') : $t('book.setSole') }}
                                 </v-list-item>
-                                <v-list-item @click="aiFillBook">
+                                <v-list-item v-if="$store.state.sys.aiEnabled" @click="aiFillBook">
                                     <v-icon>mdi-robot</v-icon>
                                     {{ $t('book.aiUpdate') }}
                                 </v-list-item>
