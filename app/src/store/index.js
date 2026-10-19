@@ -11,6 +11,9 @@ export const state = () => ({
         socials: [],
         allow: {
             physical_books: false,
+            // 功能模块总开关在拉取 /user/info 前按"开启"兜底，避免首屏把入口闪没
+            booklists: true,
+            audiobooks: true,
             download_quota: false,
             upload: false,
             register: false,

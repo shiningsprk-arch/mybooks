@@ -399,6 +399,8 @@ class BaseHandler(web.RequestHandler):
             "read": False if require_login else CONF["ALLOW_GUEST_READ"],
             "upload": False if require_login else CONF.get("ALLOW_GUEST_UPLOAD", False),
             "physical_books": CONF.get("ENABLE_PHYSICAL_BOOKS", True),
+            "booklists": CONF.get("ENABLE_BOOKLISTS", True),
+            "audiobooks": CONF.get("ENABLE_AUDIOBOOKS", True),
             "folder": CONF.get("ENABLE_FOLDER_BROWSE", False),
             "download_quota": CONF.get("ENABLE_DOWNLOAD_QUOTA", False),
             "server_import": CONF.get("ENABLE_SERVER_FILE_IMPORT", False),

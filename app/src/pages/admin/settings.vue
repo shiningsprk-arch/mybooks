@@ -400,7 +400,11 @@
             </div>
 
             <template v-if="s.special === 'homepage_cards'">
-              <homepage-cards-editor v-if="settingsLoaded" v-model="settings.HOMEPAGE_CONFIG"></homepage-cards-editor>
+              <homepage-cards-editor
+                v-if="settingsLoaded"
+                v-model="settings.HOMEPAGE_CONFIG"
+                :booklists-enabled="modState.booklists"
+              ></homepage-cards-editor>
             </template>
 
             <template v-if="s.special === 'friends'">
@@ -1148,6 +1152,8 @@ const SETTING_TEXT_TYPES = ["text", "textarea", "select", "number"];
 //   · 中文词条会作为子串参与组合词匹配（「访客权限」⊃「访客」、「推送设备」⊃「推送」+「设备」），
 //     所以组合词不必逐条登记；
 //   · 值只能写本页真实存在的设置项 key（见 groups / SPECIAL_BLOCKS），写错等于白写。
+// 功能模块总开关（设置页「功能模块」分组的四个复选框）：三层词典共用
+const MODULE_TOGGLE_KEYS = ["ENABLE_BOOKLISTS", "AI_ENABLED", "ENABLE_AUDIOBOOKS", "ENABLE_PHYSICAL_BOOKS"];
 const SEARCH_ALIASES = {
   zh: {
     // 站点与外观 · 站点标识
@@ -1173,7 +1179,7 @@ const SEARCH_ALIASES = {
     首页显示: ["HOMEPAGE_CONFIG"],
     统计: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], banner: ["HOMEPAGE_CONFIG"], 阅读统计: ["HOMEPAGE_CONFIG"],
     在读: ["HOMEPAGE_CONFIG"], 正在阅读: ["HOMEPAGE_CONFIG"],
-    书单: ["HOMEPAGE_CONFIG", "BOOK_NAV"], 书单推荐: ["HOMEPAGE_CONFIG"],
+    书单: ["HOMEPAGE_CONFIG", "BOOK_NAV", "ENABLE_BOOKLISTS"], 书单推荐: ["HOMEPAGE_CONFIG"],
     推荐给他人: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS", "HOMEPAGE_CONFIG"], 他人推荐: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS", "HOMEPAGE_CONFIG"],
     // 站点与外观 · 书籍分类
     分类: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER", "ENABLE_FOLDER_BROWSE", "AI_ALLOW_SET_CATEGORY"], 导航: ["BOOK_NAV"], 标签: ["BOOK_NAV"],
@@ -1197,6 +1203,7 @@ const SEARCH_ALIASES = {
     审核: ["REVIEW_REQUIRES_APPROVAL", "ENABLE_AUTO_NEW_USER_APPROVAL"], 先审后发: ["REVIEW_REQUIRES_APPROVAL"],
     // 阅读与内容 · 实体书与图章
     实体书: ["ENABLE_PHYSICAL_BOOKS", "ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], 纸书: ["ENABLE_PHYSICAL_BOOKS"], 纸质书: ["ENABLE_PHYSICAL_BOOKS"], 书架: ["ENABLE_PHYSICAL_BOOKS"], 印刷: ["ENABLE_PHYSICAL_BOOKS"],
+    模块: MODULE_TOGGLE_KEYS, 模块开关: MODULE_TOGGLE_KEYS, 功能模块: MODULE_TOGGLE_KEYS, 功能开关: MODULE_TOGGLE_KEYS, 简洁: MODULE_TOGGLE_KEYS, 精简: MODULE_TOGGLE_KEYS, 一键: MODULE_TOGGLE_KEYS, 开关: MODULE_TOGGLE_KEYS,
     类型转换: ["ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], 直接转换: ["ENABLE_BOOKS_TYPE_CONVERT_DIRECT"],
     文件夹: ["ENABLE_FOLDER_BROWSE"], 层级: ["ENABLE_FOLDER_BROWSE"], 多级目录: ["ENABLE_FOLDER_BROWSE"], 多级分类: ["ENABLE_FOLDER_BROWSE"],
     图章: ["ENABLE_STAMP_FEATURE"], 盖章: ["ENABLE_STAMP_FEATURE"], 印章: ["ENABLE_STAMP_FEATURE"],
@@ -1274,7 +1281,7 @@ const SEARCH_ALIASES = {
     // 服务与协议
     webdav: ["ENABLE_WEBDAV_SERVICE", "WEBDAV_SYNC_FOLDER"], 挂载: ["ENABLE_WEBDAV_SERVICE"], 可写: ["WEBDAV_SYNC_FOLDER"], 可写目录: ["WEBDAV_SYNC_FOLDER"], 读写: ["ENABLE_WEBDAV_SERVICE", "WEBDAV_SYNC_FOLDER"],
     opds: ["ENABLE_OPDS_SERVICE", "ENABLE_OPDS_AUTH"], 认证: ["ENABLE_OPDS_AUTH"], 目录服务: ["ENABLE_OPDS_SERVICE", "ENABLE_OPDS_AUTH"], 需要密码: ["ENABLE_OPDS_AUTH"],
-    订阅: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], 播客: ["ENABLE_PODCAST_SERVICE"], podcast: ["ENABLE_PODCAST_SERVICE"], 听书: ["ENABLE_PODCAST_SERVICE", "ALLOW_GUEST_READ"], 有声: ["ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_PODCAST_SERVICE"], 有声书: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE"],
+    订阅: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], 播客: ["ENABLE_PODCAST_SERVICE"], podcast: ["ENABLE_PODCAST_SERVICE"], 听书: ["ENABLE_PODCAST_SERVICE", "ALLOW_GUEST_READ"], 有声: ["ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_PODCAST_SERVICE", "ENABLE_AUDIOBOOKS"], 有声书: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_AUDIOBOOKS"],
     cdn: ["static_host"], 域名: ["static_host"], 加速: ["static_host", "PERFORMANCE_MODE"], 静态: ["static_host"], 静态资源: ["static_host"],
     cookie: ["cookie_secret"], 安全: ["cookie_secret", "INVITE_MODE", "ENABLE_OPDS_AUTH", "SSL", "AI_MCP_TOKEN"], 随机密钥: ["cookie_secret"],
     证书: ["SSL", "static_host"], https: ["SSL", "static_host"], ssl证书: ["SSL"], 凭据: ["SSL", "cookie_secret"],
@@ -1319,7 +1326,7 @@ const SEARCH_ALIASES = {
     首頁顯示: ["HOMEPAGE_CONFIG"], 首頁模組: ["HOMEPAGE_CONFIG"],
     統計: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], banner: ["HOMEPAGE_CONFIG"], 閱讀統計: ["HOMEPAGE_CONFIG"],
     在讀: ["HOMEPAGE_CONFIG"], 正在閱讀: ["HOMEPAGE_CONFIG"],
-    書單: ["HOMEPAGE_CONFIG", "BOOK_NAV"], 書單推薦: ["HOMEPAGE_CONFIG"], 推薦書單: ["HOMEPAGE_CONFIG"],
+    書單: ["HOMEPAGE_CONFIG", "BOOK_NAV", "ENABLE_BOOKLISTS"], 書單推薦: ["HOMEPAGE_CONFIG"], 推薦書單: ["HOMEPAGE_CONFIG"],
     推薦給他人: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS", "HOMEPAGE_CONFIG"], 他人推薦: ["ENABLE_BOOK_RECOMMEND_TO_OTHERS", "HOMEPAGE_CONFIG"],
     // 網站與外觀 · 書籍分類
     分類: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER", "ENABLE_FOLDER_BROWSE", "AI_ALLOW_SET_CATEGORY"], 導覽: ["BOOK_NAV"], 標籤: ["BOOK_NAV"],
@@ -1342,6 +1349,7 @@ const SEARCH_ALIASES = {
     審核: ["REVIEW_REQUIRES_APPROVAL", "ENABLE_AUTO_NEW_USER_APPROVAL"], 先審後發: ["REVIEW_REQUIRES_APPROVAL"],
     // 閱讀與內容 · 實體書與圖章
     實體書: ["ENABLE_PHYSICAL_BOOKS", "ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], 紙書: ["ENABLE_PHYSICAL_BOOKS"], 紙本書: ["ENABLE_PHYSICAL_BOOKS"], 書架: ["ENABLE_PHYSICAL_BOOKS"], 印刷: ["ENABLE_PHYSICAL_BOOKS"],
+    模組: MODULE_TOGGLE_KEYS, 模組開關: MODULE_TOGGLE_KEYS, 功能模組: MODULE_TOGGLE_KEYS, 功能開關: MODULE_TOGGLE_KEYS, 簡潔: MODULE_TOGGLE_KEYS, 精簡: MODULE_TOGGLE_KEYS, 一鍵: MODULE_TOGGLE_KEYS, 開關: MODULE_TOGGLE_KEYS,
     類型轉換: ["ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], 直接轉換: ["ENABLE_BOOKS_TYPE_CONVERT_DIRECT"], 格式轉換: ["ENABLE_BOOKS_TYPE_CONVERT_DIRECT", "ENABLE_TXT_TO_TXTZ_PLUGIN"],
     資料夾: ["ENABLE_FOLDER_BROWSE"], 層級: ["ENABLE_FOLDER_BROWSE"], 多層目錄: ["ENABLE_FOLDER_BROWSE"], 多級分類: ["ENABLE_FOLDER_BROWSE"],
     圖章: ["ENABLE_STAMP_FEATURE"], 蓋章: ["ENABLE_STAMP_FEATURE"], 印章: ["ENABLE_STAMP_FEATURE"],
@@ -1419,7 +1427,7 @@ const SEARCH_ALIASES = {
     // 服務與協議
     webdav: ["ENABLE_WEBDAV_SERVICE", "WEBDAV_SYNC_FOLDER"], 掛載: ["ENABLE_WEBDAV_SERVICE"], 可寫: ["WEBDAV_SYNC_FOLDER"], 可寫目錄: ["WEBDAV_SYNC_FOLDER"], 讀寫: ["ENABLE_WEBDAV_SERVICE", "WEBDAV_SYNC_FOLDER"],
     opds: ["ENABLE_OPDS_SERVICE", "ENABLE_OPDS_AUTH"], 認證: ["ENABLE_OPDS_AUTH"], 目錄服務: ["ENABLE_OPDS_SERVICE", "ENABLE_OPDS_AUTH"], 需要密碼: ["ENABLE_OPDS_AUTH"],
-    訂閱: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], 播客: ["ENABLE_PODCAST_SERVICE"], podcast: ["ENABLE_PODCAST_SERVICE"], 聽書: ["ENABLE_PODCAST_SERVICE", "ALLOW_GUEST_READ"], 有聲: ["ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_PODCAST_SERVICE"], 有聲書: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE"],
+    訂閱: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], 播客: ["ENABLE_PODCAST_SERVICE"], podcast: ["ENABLE_PODCAST_SERVICE"], 聽書: ["ENABLE_PODCAST_SERVICE", "ALLOW_GUEST_READ"], 有聲: ["ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_PODCAST_SERVICE", "ENABLE_AUDIOBOOKS"], 有聲書: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_AUDIOBOOKS"],
     cdn: ["static_host"], 網域: ["static_host"], 加速: ["static_host", "PERFORMANCE_MODE"], 靜態: ["static_host"], 靜態資源: ["static_host"],
     cookie: ["cookie_secret"], 安全: ["cookie_secret", "INVITE_MODE", "ENABLE_OPDS_AUTH", "SSL", "AI_MCP_TOKEN"], 隨機金鑰: ["cookie_secret"],
     憑證: ["SSL", "static_host"], https: ["SSL", "static_host"], ssl憑證: ["SSL"],
@@ -1463,7 +1471,7 @@ const SEARCH_ALIASES = {
     "homepage display": ["HOMEPAGE_CONFIG"], widgets: ["HOMEPAGE_CONFIG"],
     stats: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], statistics: ["HOMEPAGE_CONFIG", "ALLOW_USER_DISABLE_STATISTIC"], "reading stats": ["HOMEPAGE_CONFIG"], banner: ["HOMEPAGE_CONFIG"],
     "currently reading": ["HOMEPAGE_CONFIG"], "reading now": ["HOMEPAGE_CONFIG"], "in progress": ["HOMEPAGE_CONFIG"],
-    booklist: ["HOMEPAGE_CONFIG", "BOOK_NAV"], "book list": ["HOMEPAGE_CONFIG", "BOOK_NAV"], collections: ["HOMEPAGE_CONFIG"], featured: ["HOMEPAGE_CONFIG"],
+    booklist: ["HOMEPAGE_CONFIG", "BOOK_NAV", "ENABLE_BOOKLISTS"], "book list": ["HOMEPAGE_CONFIG", "BOOK_NAV", "ENABLE_BOOKLISTS"], collections: ["HOMEPAGE_CONFIG"], featured: ["HOMEPAGE_CONFIG"],
     "recommend to others": ["ENABLE_BOOK_RECOMMEND_TO_OTHERS", "HOMEPAGE_CONFIG"], "share books": ["ENABLE_BOOK_RECOMMEND_TO_OTHERS", "HOMEPAGE_CONFIG"],
     // Site & Appearance · categories
     category: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER", "AI_ALLOW_SET_CATEGORY"], categories: ["BOOK_NAV", "IMPORT_CATEGORY_WITH_FOLDER"], categorize: ["AI_ALLOW_SET_CATEGORY"], tag: ["BOOK_NAV"], tags: ["BOOK_NAV"],
@@ -1542,7 +1550,7 @@ const SEARCH_ALIASES = {
     // Services & Protocols
     webdav: ["ENABLE_WEBDAV_SERVICE", "WEBDAV_SYNC_FOLDER"], mount: ["ENABLE_WEBDAV_SERVICE"], writable: ["WEBDAV_SYNC_FOLDER"], "read write": ["ENABLE_WEBDAV_SERVICE", "WEBDAV_SYNC_FOLDER"],
     opds: ["ENABLE_OPDS_SERVICE", "ENABLE_OPDS_AUTH"], auth: ["ENABLE_OPDS_AUTH"], authentication: ["ENABLE_OPDS_AUTH"], catalog: ["ENABLE_OPDS_SERVICE", "ENABLE_OPDS_AUTH"],
-    podcast: ["ENABLE_PODCAST_SERVICE"], podcasts: ["ENABLE_PODCAST_SERVICE"], subscribe: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], subscription: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], audiobook: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE"], audiobooks: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE"],
+    podcast: ["ENABLE_PODCAST_SERVICE"], podcasts: ["ENABLE_PODCAST_SERVICE"], subscribe: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], subscription: ["ENABLE_PODCAST_SERVICE", "ENABLE_OPDS_SERVICE"], audiobook: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_AUDIOBOOKS"], audiobooks: ["ENABLE_PODCAST_SERVICE", "ENABLE_AUDIO_CONVERSION_LOG", "ENABLE_AUDIO_SUBTITLE", "ENABLE_AUDIOBOOKS"],
     cdn: ["static_host"], domain: ["static_host"], acceleration: ["static_host", "PERFORMANCE_MODE"], "static assets": ["static_host"], "static host": ["static_host"],
     cookie: ["cookie_secret"], secret: ["cookie_secret", "AI_MCP_TOKEN", "BOOKBARN_TOKEN"], security: ["cookie_secret", "INVITE_MODE", "ENABLE_OPDS_AUTH", "SSL"], certificate: ["SSL", "static_host"], cert: ["SSL", "static_host"], https: ["SSL", "static_host"],
     // System & Performance · performance & cache
@@ -1554,6 +1562,8 @@ const SEARCH_ALIASES = {
     // System & Performance · logs & debug
     log: ["LOG_LEVEL_DEBUG", "ENABLE_AUDIO_CONVERSION_LOG"], logs: ["LOG_LEVEL_DEBUG", "ENABLE_AUDIO_CONVERSION_LOG"], logging: ["LOG_LEVEL_DEBUG", "ENABLE_AUDIO_CONVERSION_LOG"], debug: ["LOG_LEVEL_DEBUG"], debugging: ["LOG_LEVEL_DEBUG"], troubleshoot: ["LOG_LEVEL_DEBUG"],
     subtitle: ["ENABLE_AUDIO_SUBTITLE"], subtitles: ["ENABLE_AUDIO_SUBTITLE"], srt: ["ENABLE_AUDIO_SUBTITLE"],
+    // Module switches · one-click simplify
+    modules: MODULE_TOGGLE_KEYS, module: MODULE_TOGGLE_KEYS, toggle: MODULE_TOGGLE_KEYS, toggles: MODULE_TOGGLE_KEYS, "module switches": MODULE_TOGGLE_KEYS, disable: MODULE_TOGGLE_KEYS,
     restart: ["autoreload"], reboot: ["autoreload"], reload: ["autoreload"], "take effect": ["autoreload"], timeout: ["convert_timeout"], "conversion timeout": ["convert_timeout"],
     // System & Performance · updates & toolbox
     update: ["AUTO_CHECKING_NEW_VERSION", "ENABLE_TOOLBOX_STORE"], updates: ["AUTO_CHECKING_NEW_VERSION", "ENABLE_TOOLBOX_STORE", "MAIN_PAGE_RECENT_COUNT"], version: ["AUTO_CHECKING_NEW_VERSION"], upgrade: ["AUTO_CHECKING_NEW_VERSION"], "check update": ["AUTO_CHECKING_NEW_VERSION"],
@@ -1777,8 +1787,8 @@ export default {
                 type: "checkbox_list",
                 tips: "settings.sidebar_items_tips",
                 items: [
-                  { value: "audiobooks", text: "appHeader.audioBooks" },
-                  { value: "printbooks", text: "appHeader.physicalBooks" },
+                  { value: "audiobooks", text: "appHeader.audioBooks", mod: "audiobooks" },
+                  { value: "printbooks", text: "appHeader.physicalBooks", mod: "physical" },
                   { value: "publishers", text: "appHeader.publishers" },
                   { value: "folders", text: "appHeader.folders" },
                   { value: "categories", text: "nav.categories" },
@@ -1812,6 +1822,25 @@ export default {
             icon: "mdi-link-variant",
             title: "settings.friend_links",
             special: "friends",
+          },
+        ],
+      },
+      {
+        id: "modules",
+        icon: "mdi-puzzle-outline",
+        title: "settings.group_modules",
+        sections: [
+          {
+            id: "modules-switch",
+            icon: "mdi-toggle-switch-outline",
+            title: "settings.sec_modules",
+            desc: "settings.sec_modules_desc",
+            fields: [
+              { icon: "mdi-playlist-play", key: "ENABLE_BOOKLISTS", label: "settings.enable_booklists", type: "checkbox" },
+              { icon: "mdi-robot", key: "AI_ENABLED", label: "settings.ai_enabled", type: "checkbox" },
+              { icon: "mdi-headphones", key: "ENABLE_AUDIOBOOKS", label: "settings.enable_audiobooks", type: "checkbox" },
+              { icon: "mdi-book-variant", key: "ENABLE_PHYSICAL_BOOKS", label: "settings.enable_physical_books", type: "checkbox" },
+            ],
           },
         ],
       },
@@ -1868,6 +1897,7 @@ export default {
                 key: "ENABLE_PHYSICAL_BOOKS",
                 label: "settings.enable_physical_books",
                 type: "checkbox",
+                mod: "physical",
                 fields: [
                   {
                     icon: "mdi-swap-horizontal",
@@ -2217,6 +2247,7 @@ export default {
             icon: "mdi-scatter-plot-outline",
             title: "settings.ai_capability",
             special: "ai_capabilities",
+            mod: "ai",
           },
           {
             id: "svc-bookbarn",
@@ -2273,6 +2304,7 @@ export default {
             id: "proto-podcast",
             icon: "mdi-podcast",
             title: "settings.sec_proto_podcast",
+            mod: "audiobooks",
             fields: [
               {
                 icon: "mdi-podcast",
@@ -2388,12 +2420,14 @@ export default {
                 key: "ENABLE_AUDIO_CONVERSION_LOG",
                 label: "settings.enable_audio_conversion_log",
                 type: "checkbox",
+                mod: "audiobooks",
               },
               {
                 icon: "mdi-closed-caption-outline",
                 key: "ENABLE_AUDIO_SUBTITLE",
                 label: "settings.enable_audio_subtitle",
                 type: "checkbox",
+                mod: "audiobooks",
               },
               {
                 icon: "mdi-restart",
@@ -2580,8 +2614,23 @@ export default {
     ],
   }),
   computed: {
+    // 功能模块开关状态：直接读编辑中的 settings，勾选后同页即时联动显隐
+    modState() {
+      const s = this.settings || {};
+      return {
+        booklists: s.ENABLE_BOOKLISTS !== false,
+        ai: !!s.AI_ENABLED,
+        audiobooks: s.ENABLE_AUDIOBOOKS !== false,
+        physical: s.ENABLE_PHYSICAL_BOOKS !== false,
+      };
+    },
     currentGroups() {
-      return this.groups.filter((g) => g.id === this.activeGroup);
+      return this.groups
+        .filter((g) => g.id === this.activeGroup)
+        .map((g) => ({
+          ...g,
+          sections: g.sections.map((s) => this.filterModSection(s)).filter(Boolean),
+        }));
     },
     searchQuery() {
       return (this.searchQ || "").trim();
@@ -2610,6 +2659,8 @@ export default {
     flatIndex() {
       const idx = [];
       const pathOf = {};
+      const visibleSections = new Set();
+      const seen = new Set();
       this.groups.forEach((g) => {
         g.sections.forEach((s) => {
           pathOf[g.id + "/" + s.id] =
@@ -2617,6 +2668,7 @@ export default {
         });
       });
       const push = (entry, gid, sid, extraPath, parentKey) => {
+        seen.add(entry.key);
         idx.push({
           key: entry.key,
           label: this.$t(entry.label),
@@ -2631,8 +2683,12 @@ export default {
       };
       this.groups.forEach((g) => {
         g.sections.forEach((s) => {
-          (s.fields || []).forEach((f) => push(f, g.id, s.id, ""));
-          (s.groups || []).forEach((grp) => {
+          // 模块开关关闭的配置不建索引：设置页搜索不会命中当前不可见的目标
+          const fs = this.filterModSection(s);
+          if (!fs) return;
+          visibleSections.add(g.id + "/" + s.id);
+          (fs.fields || []).forEach((f) => push(f, g.id, s.id, ""));
+          (fs.groups || []).forEach((grp) => {
             push(grp, g.id, s.id, "");
             (grp.fields || []).forEach((f) =>
               push(f, g.id, s.id, this.$t(grp.label), grp.key)
@@ -2641,6 +2697,8 @@ export default {
         });
       });
       SPECIAL_BLOCKS.forEach((b) => {
+        // 特殊块只登记 groups.fields 覆盖不到的 key；隐藏小节与已收录的重复键都跳过
+        if (!visibleSections.has(b.gid + "/" + b.sid) || seen.has(b.key)) return;
         idx.push({
           key: b.key,
           label: this.$t(b.label),
@@ -2885,6 +2943,35 @@ export default {
         seed("SOCIAL_AUTH_" + v + "_KEY", "text");
         seed("SOCIAL_AUTH_" + v + "_SECRET", "text");
       });
+    },
+    // 功能模块联动隐藏：模块关闭时，把该模块的小节/字段/嵌套组/勾选项从"要渲染与
+    // 建搜索索引"的数据里剔除。只过滤展示副本——settings 里的原值保持不动，保存照常提交，
+    // 重开模块后原配置原样恢复。
+    filterModSection(section) {
+      const shown = (mod) => !mod || this.modState[mod];
+      if (!shown(section.mod)) return null;
+      const out = Object.assign({}, section);
+      if (section.fields) {
+        out.fields = section.fields
+          .filter((f) => shown(f.mod))
+          .map((f) =>
+            f.items
+              ? Object.assign({}, f, {
+                  items: f.items.filter((opt) => shown(opt.mod)),
+                })
+              : f
+          );
+      }
+      if (section.groups) {
+        out.groups = section.groups
+          .filter((grp) => shown(grp.mod))
+          .map((grp) =>
+            Object.assign({}, grp, {
+              fields: (grp.fields || []).filter((f) => shown(f.mod)),
+            })
+          );
+      }
+      return out;
     },
     // 全局 AppHeader 由 store.nav 的 v-if 控制渲染，可能晚于本页 mounted；出现后按其真实高度校准吸顶偏移
     watchAppBar() {

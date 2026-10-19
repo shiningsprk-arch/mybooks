@@ -57,10 +57,12 @@ export default {
   // Auto import components: https://go.nuxtjs.dev/config-components
   components: true,
 
-  // 全站路由守卫：REQUIRE_LOGIN 开启且未登录时把页面跳到 /login。
-  // 页面 HTML 不经后端 BaseHandler（见 handlers/base.py 的门禁注释），只能在前端补这一层。
+  // 全站路由守卫：
+  //  · require-login：REQUIRE_LOGIN 开启且未登录时把页面跳到 /login。
+  //    页面 HTML 不经后端 BaseHandler（见 handlers/base.py 的门禁注释），只能在前端补这一层。
+  //  · feature-guard：功能模块总开关（书单/有声书/实体书）关闭时，模块页面直达 URL 回到首页。
   router: {
-    middleware: ["require-login"],
+    middleware: ["require-login", "feature-guard"],
   },
 
   // Modules for dev and build (recommended): https://go.nuxtjs.dev/config-modules

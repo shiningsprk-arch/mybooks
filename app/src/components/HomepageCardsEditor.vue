@@ -6,7 +6,7 @@
     </div>
     <v-list dense class="homepage-section-list">
       <v-list-item
-        v-for="(section, idx) in local.order"
+        v-for="(section, idx) in visibleOrder"
         :key="section"
         class="px-0"
         :class="{ 'homepage-section-drag-over': dragOverSection === section }"
@@ -184,6 +184,11 @@ export default {
       type: Object,
       default: null,
     },
+    // 书单模块总开关：关闭时隐藏「书单推荐」卡片行（仅展示层，local.order 数据保留）
+    booklistsEnabled: {
+      type: Boolean,
+      default: true,
+    },
   },
   data() {
     return {
@@ -202,6 +207,11 @@ export default {
     };
   },
   computed: {
+    // 书单模块关闭时列表里不再渲染书单卡（数据保留，重开模块原样恢复）
+    visibleOrder() {
+      if (this.booklistsEnabled) return this.local.order;
+      return this.local.order.filter((s) => s !== "index.booklistRecommendation");
+    },
     typeOptions() {
       return CUSTOM_TYPES.map((type) => ({
         value: type,

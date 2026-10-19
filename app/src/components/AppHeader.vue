@@ -607,6 +607,8 @@ export default {
                 push: true,
                 read: true,
                 physical_books: true,
+                booklists: true,
+                audiobooks: true,
             },
         },
         messages: [],

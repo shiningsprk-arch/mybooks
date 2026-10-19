@@ -81,6 +81,9 @@ settings = {
     "USE_BOOKBARN_PROXY": False,
     "BOOK2AUDIO_PROXY": "",
     "ENABLE_PHYSICAL_BOOKS": True,
+    # 功能模块总开关：关闭后前端隐藏该模块入口与设置页相关配置（后端不拦截）
+    "ENABLE_BOOKLISTS": True,
+    "ENABLE_AUDIOBOOKS": True,
     "ENABLE_FOLDER_BROWSE": False,
     "ALLOW_GUEST_UPLOAD": False,
     "AI_ENABLED": False,
