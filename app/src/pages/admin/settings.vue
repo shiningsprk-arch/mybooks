@@ -3243,7 +3243,6 @@ export default {
           }
 
           localStorage.setItem("indexPage", this.settings["INDEX_PAGE_TYPE"]);
-          localStorage.setItem("aiEnabled", this.settings["AI_ENABLED"]);
           localStorage.setItem(
             "defaultPageSize",
             this.settings["DEFAULT_PAGE_SIZE"]

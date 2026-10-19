@@ -596,7 +596,7 @@
                                 </v-chip>
                             </div>
                             <div class="tag-chips" style="margin-top: 5px;">
-                                <v-chip rounded smallF color="indigo" class="white--text"
+                                <v-chip v-if="$store.state.sys.aiEnabled" rounded smallF color="indigo" class="white--text"
                                         @click="aiFillBook" :loading="ai_filling">
                                     <v-icon left>mdi-robot</v-icon>
                                     {{ $t('book.aiUpdate') }}
@@ -1311,7 +1311,8 @@ export default {
             return (this.book.files || []).some((file) => ["epub", "txt"].includes(file.format.toLowerCase()));
         },
         mynexusEnabled: function () {
-            return this.$store.state.sys?.mynexus_enabled === true;
+            // AI 总开关关闭时 MyNexus 一并隐藏（AI 解析/伴读同样属于 AI 界面）
+            return this.$store.state.sys?.mynexus_enabled === true && this.$store.state.sys?.aiEnabled === true;
         },
         canReview: function () {
             // 评价功能总开关（管理员在"浏览与阅读"里关闭时，整个评论区都不展示）

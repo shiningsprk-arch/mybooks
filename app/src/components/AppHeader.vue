@@ -658,10 +658,9 @@ export default {
             return !this.$vuetify.theme.dark && !this.navIsDark;
         },
         isAiFeatureEnabled() {
-            if (process.client) {
-                return localStorage.getItem('aiEnabled') === 'true';
-            }
-            return false;
+            // 读后端下发的真值（sys.aiEnabled）：原先读 localStorage，只有管理员在本浏览器
+            // 保存过设置才会写入——"关了 AI 没效果"的根因就在这里
+            return !!(this.$store.state.sys && this.$store.state.sys.aiEnabled);
         },
         items: function () {
             const loginLink = { icon: "mdi-account-circle", href: "/login", text: "appHeader.please_login", color:"white" };
@@ -808,7 +807,6 @@ export default {
             }
             this.$store.commit("set_title", rsp.sys.title);
             this.$store.state.site_title_template = "%s | " + rsp.sys.title;
-            this.$store.state.ai_enabled = rsp.sys.aiEnabled;
             this.$store.state.default_page_size = rsp.sys.defaultPageSize;
             this.$store.state.index_page = rsp.sys.indexPage;
             this.$store.state.showUserInfo = rsp.sys.showUserInfo;
