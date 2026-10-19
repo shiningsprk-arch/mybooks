@@ -473,7 +473,7 @@
                                         </template>
                                         <span>{{ $t('readingState.wantsHint') }}</span>
                                     </v-tooltip>
-                                    <BookListQuickAddMenu v-if="$store.state.user?.is_login" :book-id="book.id">
+                                    <BookListQuickAddMenu v-if="$store.state.user?.is_login && $store.state.sys.allow.booklists" :book-id="book.id">
                                         <template v-slot:activator="{ on, attrs }">
                                             <v-tooltip bottom>
                                                 <template v-slot:activator="{ on: onTooltip, attrs: attrsTooltip }">

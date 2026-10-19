@@ -395,6 +395,9 @@ export default {
         allowPhysicalBooks() {
             return !!(this.$store.state.sys && this.$store.state.sys.allow && this.$store.state.sys.allow.physical_books);
         },
+        booklistsEnabled() {
+            return !!(this.$store.state.sys && this.$store.state.sys.allow && this.$store.state.sys.allow.booklists);
+        },
     },
     watch: {
         indexPage: {
@@ -430,6 +433,10 @@ export default {
     },
     methods: {
         isSectionEnabled(section) {
+            // 书单模块总开关是硬约束：关闭时书单卡无条件隐藏（叠加在卡片配置之上）
+            if (section === 'index.booklistRecommendation' && !this.booklistsEnabled) {
+                return false;
+            }
             return !this.hiddenSections.has(section);
         },
         onCustomCardState(id, state) {
