@@ -17,7 +17,7 @@
                                 <v-icon small color="white">mdi-cloud-outline</v-icon>
                             </div>
                             <!-- 实体书角标 -->
-                            <div v-if="book.book_type === 1" class="physical-book-badge" :class="{ 'badge-shifted': book.shared }">
+                            <div v-if="book.book_type === 1 && $store.state.sys.allow.physical_books" class="physical-book-badge" :class="{ 'badge-shifted': book.shared }">
                                 <v-icon small color="white">mdi-bookshelf</v-icon>
                             </div>
                             <!-- 音频书角标 -->
@@ -33,7 +33,7 @@
                                 <v-chip rounded x-small color="green" class="white--text ma-1" v-if="book.category">
                                     {{ book.category }}
                                 </v-chip>
-                                <v-chip rounded x-small color="dark" class="white--text ma-1" v-if="book.location">
+                                <v-chip rounded x-small color="dark" class="white--text ma-1" v-if="book.location && $store.state.sys.allow.physical_books">
                                     {{ book.location }}
                                 </v-chip>
                                 <template v-for="(file, index) in book.files?.slice(0, 3)">

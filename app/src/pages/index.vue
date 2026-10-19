@@ -128,7 +128,7 @@
                                     :src="book.thumb"
                                     class="cover-fill-img book-img-hover"
                                 ></v-img>
-                                <div v-if="book.book_type === 1" class="physical-book-badge">
+                                <div v-if="book.book_type === 1 && allowPhysicalBooks" class="physical-book-badge">
                                     <v-icon small color="white">mdi-bookshelf</v-icon>
                                 </div>
                                 <div
@@ -194,7 +194,7 @@
                                     class="cover-fill-img book-img-hover"
                                 ></v-img>
                                 <!-- 实体书角标 -->
-                                <div v-if="book.book_type === 1" class="physical-book-badge">
+                                <div v-if="book.book_type === 1 && allowPhysicalBooks" class="physical-book-badge">
                                     <v-icon small color="white">mdi-bookshelf</v-icon>
                                 </div>
                                 <div v-if="reasonText(book)" class="reason-badge">{{ reasonText(book) }}</div>

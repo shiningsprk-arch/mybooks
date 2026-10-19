@@ -33,7 +33,7 @@
         <v-card :to="book.href" class="ma-1">
           <div class="book-img-container" :title="book.title">
             <v-img :src="book.thumb" class="cover-fill-img book-img-hover"></v-img>
-            <div v-if="book.book_type === 1" class="physical-book-badge">
+            <div v-if="book.book_type === 1 && $store.state.sys.allow.physical_books" class="physical-book-badge">
               <v-icon small color="white">mdi-bookshelf</v-icon>
             </div>
           </div>

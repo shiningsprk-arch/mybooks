@@ -353,7 +353,7 @@
                                     <v-icon>mdi-card-bulleted-outline</v-icon>
                                     {{ $t('book.generateShareCard') }}
                                 </v-list-item>
-                                <v-list-item @click="exchangeBookType">
+                                <v-list-item v-if="$store.state.sys.allow.physical_books" @click="exchangeBookType">
                                     <v-icon>mdi-swap-horizontal-bold</v-icon>
                                     {{ book.book_type==this.BOOK_TYPE.PHYSICAL ? $t('book.exchangeToEbook') : $t('book.exchangeToPhysical') }}
                                 </v-list-item>
@@ -536,13 +536,13 @@
                                     </template>
                                 </div>
                                 <br/>
-                                <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">
+                                <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL && $store.state.sys.allow.physical_books">
                                     <v-chip rounded small dark color="indigo">
                                         <v-icon>mdi-bookshelf</v-icon>{{ $t('book.bookPhysical') }}
                                     </v-chip>
                                 </span>
-                                <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">{{ $t('book.bookCount') }}: {{book.book_count}}</span>
-                                <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL">
+                                <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL && $store.state.sys.allow.physical_books">{{ $t('book.bookCount') }}: {{book.book_count}}</span>
+                                <span v-if="book.book_type==this.BOOK_TYPE.PHYSICAL && $store.state.sys.allow.physical_books">
                                     , {{ $t('book.location') }}:
                                     <span v-if="!editing_location">
                                         {{book.location || "*" }}

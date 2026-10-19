@@ -55,7 +55,7 @@
     >
       <v-radio-group v-model="uploadBookType" row class="mt-0">
         <v-radio :label="$t('expected.ebook')" value="ebook"></v-radio>
-        <v-radio :label="$t('expected.physicalBook')" value="physical"></v-radio>
+        <v-radio v-if="$store.state.sys.allow.physical_books" :label="$t('expected.physicalBook')" value="physical"></v-radio>
       </v-radio-group>
       <v-file-input v-if="uploadBookType === 'ebook'" v-model="uploadFile" :label="$t('expected.selectFile')" prepend-icon="mdi-book-open-variant"></v-file-input>
       <v-text-field v-else ref="isbnField" v-model="uploadIsbn" :label="$t('expected.isbnNumber')" :rules="debouncedIsbnRules" prepend-icon="mdi-barcode" clearable @input="clearValidationCache"></v-text-field>

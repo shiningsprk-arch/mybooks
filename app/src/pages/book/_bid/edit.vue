@@ -113,10 +113,10 @@
                                 <v-col class='py-0' cols=12 sm=6>
                                     <v-text-field :label="$t('book.edit.fields.isbn')" v-model="book.isbn">{{ book.isbn }}</v-text-field>
                                 </v-col>
-                                <v-col class='py-0' cols=12 sm=4 v-if="book.book_type === 1">
+                                <v-col class='py-0' cols=12 sm=4 v-if="book.book_type === 1 && $store.state.sys.allow.physical_books">
                                     <v-text-field :label="$t('book.edit.fields.location')" v-model="book.location">{{ book.location }}</v-text-field>
                                 </v-col>
-                                <v-col class='py-0' cols=12 sm=2 v-if="book.book_type === 1">
+                                <v-col class='py-0' cols=12 sm=2 v-if="book.book_type === 1 && $store.state.sys.allow.physical_books">
                                     <v-text-field
                                         :label="$t('book.edit.fields.book_count')"
                                         :disabled="book.book_type != 1"
