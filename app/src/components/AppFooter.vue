@@ -9,8 +9,8 @@
             <p>
                 <v-btn small text target="_blank" v-if="!hide_project_links" href="https://github.com/PoxenStudio/mybooks">Project</v-btn>
                 <span v-if="!hide_project_links">|</span>
-                <v-btn small text target="_blank" href="/podcast">Podcast</v-btn>
-                <span>|</span>
+                <v-btn small text target="_blank" v-if="$store.state.sys.allow.audiobooks" href="/podcast">Podcast</v-btn>
+                <span v-if="$store.state.sys.allow.audiobooks">|</span>
                 <v-btn small text target="_blank" v-if="!hide_project_links" href="https://mybooks.top">MyBooks</v-btn>
                 <span v-if="!hide_project_links">|</span>
                 <v-btn small text target="_blank" href="/opds-readme"> {{ $t('appHeader.opdsIntroduction') }}</v-btn>

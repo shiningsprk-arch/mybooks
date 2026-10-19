@@ -17,6 +17,7 @@
             </v-dialog>
 
             <AppDialog
+                v-if="$store.state.sys.allow.audiobooks"
                 v-model="dialog_epub2audio"
                 type="action"
                 :title="$t('book.convertToAudio')"
@@ -62,6 +63,7 @@
             </AppDialog>
 
             <AudioListDialog
+                v-if="$store.state.sys.allow.audiobooks"
                 :open.sync="dialog_audiolist"
                 :audios="audios"
                 :audio-status="AUDIO_STATUS"
@@ -209,7 +211,7 @@
                         class="mx-2 d-flex d-sm-flex"
                         :style="tiny ? { padding: '0px', margin: '0px 1px !important' } : {}"
                         @click="switchToAudioPlayer"
-                        v-if="hasEBooks"
+                        v-if="hasEBooks && $store.state.sys.allow.audiobooks"
                     >
                         <v-icon v-if="tiny">mdi-music-note</v-icon>
                         <template v-else>
@@ -835,7 +837,7 @@
         <v-col cols="12" sm="6" class="book-action-col">
             <v-card outlined>
                 <v-list>
-                    <v-list-item @click="switchAudioDialog" :disabled="!hasEBooks">
+                    <v-list-item v-if="$store.state.sys.allow.audiobooks" @click="switchAudioDialog" :disabled="!hasEBooks">
                         <v-list-item-avatar large :color="!hasEBooks ? 'grey' : (audios.status === AUDIO_STATUS.FAILED ? 'red' : 'primary')">
                             <v-icon dark>{{ audios.status === AUDIO_STATUS.FAILED ? 'mdi-alert-circle' : 'mdi-playlist-music' }}</v-icon>
                         </v-list-item-avatar>

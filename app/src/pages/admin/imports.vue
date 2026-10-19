@@ -59,6 +59,7 @@
                         </v-btn>
                     </template>
                     <v-btn
+                        v-if="$store.state.sys.allow.audiobooks"
                         :disabled="loading || bulkDeleting"
                         :outlined="$vuetify.breakpoint.xs"
                         color="purple darken-1"

@@ -21,7 +21,7 @@
                                 <v-icon small color="white">mdi-bookshelf</v-icon>
                             </div>
                             <!-- 音频书角标 -->
-                            <div v-if="isAudioPage || book.has_audio" class="audio-book-badge">
+                            <div v-if="$store.state.sys.allow.audiobooks && (isAudioPage || book.has_audio)" class="audio-book-badge">
                                 <v-icon small color="white">mdi-headphones</v-icon>
                             </div>
                         </div>
