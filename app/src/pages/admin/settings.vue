@@ -2864,13 +2864,14 @@ export default {
     }
   },
   methods: {
-    // lockOn 指定的总开关开启后，该字段失去意义：显示为已勾选且不可取消，
+    // lockOn 指定的总开关开启后，该字段失去意义：置灰显示为未勾选且不可点选
+    // （与后端一致——REQUIRE_LOGIN 下四项访客权限恒按 False 处理），
     // 但不回写 settings，保留用户原先保存的访客权限值，关掉总开关后原样恢复。
     isFieldLockedBy(f) {
       return !!(f && f.lockOn && this.settings && this.settings[f.lockOn]);
     },
     isCheckboxInputValue(f) {
-      return this.isFieldLockedBy(f) ? true : this.settings[f.key];
+      return this.isFieldLockedBy(f) ? false : this.settings[f.key];
     },
     onCheckboxChange(f, value) {
       if (this.isFieldLockedBy(f)) return;
