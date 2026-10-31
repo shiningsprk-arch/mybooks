@@ -23,10 +23,16 @@ import os
 import threading
 from typing import Dict, Optional
 
-from sqlalchemy import func, text
+from sqlalchemy import func, select, text
 
 from webserver import loader, site_time
-from webserver.models import BookReadingStats, Reader, Reading, ReadingState
+from webserver.models import (
+    READ_STATE_FINISHED,
+    BookReadingStats,
+    Reader,
+    Reading,
+    ReadingState,
+)
 
 CONF = loader.get_settings()
 
@@ -412,7 +418,15 @@ def _near_finish_rows(db, reader_id: int) -> list:
     必须先 GROUP BY 再 LIMIT：按格式行排序去重会让多格式的书以格式行数占坑、
     挤掉后面的书（实测 4 本×4 格式占满预取行，第 5 本被切）。total_seconds 取该
     本最高进度那一行，与旧实现的去重口径一致。
+
+    用户手动「标记读完」只写 reading_state.read_state，不碰分格式统计的 state
+    （后者要到进度 ≥99.5% 才自动完结），所以这里显式排除已标记读完的书；排除
+    必须发生在 LIMIT 之前，否则读完的书仍会占掉名额。
     """
+    finished_book_ids = select(ReadingState.book_id).where(
+        ReadingState.reader_id == reader_id,
+        ReadingState.read_state == READ_STATE_FINISHED,
+    )
     top = (
         db.query(
             BookReadingStats.book_id,
@@ -422,6 +436,7 @@ def _near_finish_rows(db, reader_id: int) -> list:
             BookReadingStats.reader_id == reader_id,
             BookReadingStats.state == BookReadingStats.STATE_READING,
             BookReadingStats.progress_percent >= NEAR_FINISH_MIN_PERCENT,
+            ~BookReadingStats.book_id.in_(finished_book_ids),
         )
         .group_by(BookReadingStats.book_id)
         .order_by(func.max(BookReadingStats.progress_percent).desc())

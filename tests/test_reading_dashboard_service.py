@@ -319,6 +319,37 @@ class TestReadingDashboardService(unittest.TestCase):
         self.assertEqual([r["book_id"] for r in rows], [12, 11])
         self.assertEqual(rows[0]["progress_percent"], 92.0)
 
+    def test_near_finish_excludes_books_marked_finished(self):
+        """手动标记读完只写 ReadingState.read_state，分格式统计仍是 STATE_READING，
+        这类书不能再出现在「即将读完」，也不能占掉 LIMIT 名额。"""
+        now = datetime.datetime.utcnow()
+
+        def add_stats(book_id, percent):
+            self.session.add(
+                BookReadingStats(
+                    reader_id=1, book_id=book_id, format="epub", state=0,
+                    total_seconds=600, progress_percent=percent,
+                    create_time=now, update_time=now,
+                )
+            )
+
+        def add_read_state(book_id, read_state):
+            state = ReadingState(book_id, 1)
+            state.set_read_state(read_state)
+            self.session.add(state)
+
+        add_stats(30, 99.0)  # 进度最高但已标记读完，排除且不占名额
+        add_read_state(30, 2)
+        for offset, book_id in enumerate(range(31, 36)):
+            add_stats(book_id, 90.0 - offset)  # 其余 5 本填满名额
+        add_read_state(31, 1)  # 在读，保留
+        add_read_state(32, 0)  # 未读标记不改变进度口径，保留
+        self.session.commit()
+
+        rows = svc.get_stats(self.session, self.reader)["near_finish"]
+        self.assertEqual([r["book_id"] for r in rows], [31, 32, 33, 34, 35])
+        self.assertEqual(rows[0]["progress_percent"], 90.0)
+
     def test_lifetime_block_persisted_and_reused_after_db_wipe(self):
         """评审 P3-2：lifetime 聚合写进 reading.json，同日第二次请求不再扫全历史"""
         today = site_time.site_today()
