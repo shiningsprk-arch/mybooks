@@ -2024,7 +2024,6 @@ export default {
                 key: "USE_COVER_BACKGROUND",
                 label: "settings.use_cover_background",
                 type: "checkbox",
-                lockOn: "USE_DYNAMIC_COVER",
                 tips: "settings.use_cover_background_tips",
                 al: ["封面背景", "背景图", "cover background"],
               },
