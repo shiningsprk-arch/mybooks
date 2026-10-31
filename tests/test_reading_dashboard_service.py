@@ -350,6 +350,28 @@ class TestReadingDashboardService(unittest.TestCase):
         self.assertEqual([r["book_id"] for r in rows], [31, 32, 33, 34, 35])
         self.assertEqual(rows[0]["progress_percent"], 90.0)
 
+    def test_near_finish_exclusion_is_per_reader(self):
+        """别的读者把同一本书标记读完，不影响本人「即将读完」。"""
+        now = datetime.datetime.utcnow()
+        self.session.add(
+            BookReadingStats(
+                reader_id=1, book_id=40, format="epub", state=0,
+                total_seconds=600, progress_percent=88.0,
+                create_time=now, update_time=now,
+            )
+        )
+        other = Reader()
+        other.id = 2
+        other.username = "u2"
+        self.session.add(other)
+        other_state = ReadingState(40, 2)
+        other_state.set_read_state(2)
+        self.session.add(other_state)
+        self.session.commit()
+
+        rows = svc.get_stats(self.session, self.reader)["near_finish"]
+        self.assertEqual([r["book_id"] for r in rows], [40])
+
     def test_lifetime_block_persisted_and_reused_after_db_wipe(self):
         """评审 P3-2：lifetime 聚合写进 reading.json，同日第二次请求不再扫全历史"""
         today = site_time.site_today()
