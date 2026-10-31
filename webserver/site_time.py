@@ -53,25 +53,42 @@ TIMEZONE_BY_LANGUAGE = {
 }
 FALLBACK_TIMEZONE = TIMEZONE_BY_LANGUAGE["zh"]
 
-# zoneinfo 取不到 tzdata 时的兜底（Windows 未装 tzdata / 精简镜像）：只覆盖常用时区
-# （含设置页已归并的旧选项，历史配置仍可能存着），夏令时地区按标准时偏移折算，误差最多
-# 1 小时，不会因为查不到库而退回 UTC 把整个站点的日期算错 8 小时。
+# zoneinfo 取不到 tzdata 时的兜底（Windows 未装 tzdata / 精简镜像）：覆盖设置页可选的
+# 每个时区（含设置页已归并的旧选项，历史配置仍可能存着）。夏令时地区按标准时偏移折算，
+# 误差最多 1 小时，不会因为查不到库而退回 UTC 把整个站点的日期算错 8 小时。
 FALLBACK_UTC_OFFSETS = {
     "UTC": 0,
+    "Etc/GMT+12": -12,
+    "Pacific/Pago_Pago": -11,
+    "Pacific/Honolulu": -10,
+    "America/Anchorage": -9,
+    "America/Los_Angeles": -8,
+    "America/Denver": -7,
+    "America/Chicago": -6,
+    "America/New_York": -5,
+    "America/Santiago": -4,
+    "America/Sao_Paulo": -3,
+    "America/Noronha": -2,
+    "Atlantic/Azores": -1,
+    "Europe/London": 0,
+    "Europe/Berlin": 1,
+    "Europe/Athens": 2,
+    "Europe/Moscow": 3,
+    "Asia/Dubai": 4,
+    "Asia/Karachi": 5,
+    "Asia/Kolkata": 5.5,
+    "Asia/Dhaka": 6,
+    "Asia/Bangkok": 7,
     "Asia/Shanghai": 8,
+    "Asia/Tokyo": 9,
+    "Australia/Sydney": 10,
+    "Pacific/Noumea": 11,
+    "Pacific/Auckland": 12,
+    # 历史设置页选项（已归并到相邻城市，旧配置仍可能存着）
     "Asia/Hong_Kong": 8,
     "Asia/Taipei": 8,
     "Asia/Singapore": 8,
-    "Asia/Tokyo": 9,
     "Asia/Seoul": 9,
-    "Asia/Bangkok": 7,
-    "Asia/Kolkata": 5.5,
-    "Europe/Berlin": 1,
-    "Europe/London": 0,
-    "America/Sao_Paulo": -3,
-    "America/New_York": -5,
-    "America/Los_Angeles": -8,
-    "Australia/Sydney": 10,
 }
 
 # 名字在 FALLBACK_UTC_OFFSETS 之外、本机又取不到 tzdata 时的粗粒度兜底：按 IANA 名的

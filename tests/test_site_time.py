@@ -161,11 +161,11 @@ class TestSiteTime(unittest.TestCase):
 
     def test_missing_tzdata_uses_region_offset_for_names_outside_the_table(self):
         # 模拟精简镜像 / Windows 未装 tzdata：表外的 IANA 名按大区近似偏移（America/ → -5），
-        # 而不是退回站点语言默认（中文站 +8，与芝加哥差 14 小时）
-        self._set(timezone="America/Chicago", language="zh")
+        # 而不是退回站点语言默认（中文站 +8，与哈瓦那差 13 小时）
+        self._set(timezone="America/Havana", language="zh")
         with mock.patch.object(site_time, "ZoneInfo", None):
             self.assertEqual(site_time.site_now().utcoffset(), datetime.timedelta(hours=-5))
-            self.assertEqual(site_time.resolve_timezone_name(), "America/Chicago")
+            self.assertEqual(site_time.resolve_timezone_name(), "America/Havana")
 
     def test_misspelled_name_still_falls_back_to_the_language_default(self):
         # 本机有 tzdata 时，拼错的名字仍走语言默认，别被大区兜底吃掉（原名不能说成有效）
