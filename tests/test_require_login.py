@@ -8,6 +8,7 @@
 3. 与访问码模式（INVITE_MODE）的覆盖关系，以及 sys.allow 的上报值。
 """
 
+import base64
 import unittest
 from types import SimpleNamespace
 from unittest import mock
@@ -57,6 +58,43 @@ def _bare_handler(path="/api/index", uri=None):
     handler.redirect = _redirect
     handler.get_argument = lambda name, default=None: default
     handler.get_secure_cookie = lambda name: None
+    return handler
+
+
+def _basic_auth_header(username, password):
+    raw = ("%s:%s" % (username, password)).encode("UTF-8")
+    return "Basic " + base64.encodebytes(raw).decode("ascii")
+
+
+def _auth_handler(auth_header, user, path="/opds/", from_opds=False):
+    """装配 Basic 认证路径：真实 Tornado current_user 属性 + 不带任何 cookie 的请求。"""
+    handler = BaseHandler.__new__(BaseHandler)
+    handler.application = SimpleNamespace(settings={"cookie_secret": "test-secret" * 4})
+    handler.request = SimpleNamespace(
+        path=path,
+        uri=path + ("?from=opds" if from_opds else ""),
+        headers={"Authorization": auth_header},
+        cookies={},
+        remote_ip="127.0.0.1",
+    )
+    handler.sqlite_session = mock.Mock()
+    handler.sqlite_session.query.return_value.filter.return_value.first.return_value = user
+    handler.sqlite_session.merge.return_value = user
+    handler.cookies_cache = {}
+    handler.saved_cookies = []
+    handler.set_secure_cookie = lambda k, v: handler.saved_cookies.append((k, v))
+    handler.written = []
+    handler.status = None
+    handler.headers = {}
+    handler.redirects = []
+    handler.write = lambda data: handler.written.append(data)
+    handler.set_status = lambda code: setattr(handler, "status", code)
+    handler.set_header = lambda k, v: handler.headers.__setitem__(k, v)
+    handler.redirect = lambda url, **kw: handler.redirects.append(url)
+    handler.get_argument = lambda name, default=None: (
+        "opds" if (from_opds and name == "from") else default
+    )
+    handler.mark_invited = mock.Mock()
     return handler
 
 
@@ -482,6 +520,65 @@ class TestShouldBeLoggedIn(unittest.TestCase):
         handler.set_secure_cookie = lambda k, v: handler.saved_cookies.append(k)
         handler.login_user(SimpleNamespace(id=3, username="u"), persist=False)
         self.assertEqual(handler.saved_cookies, ["user_id", "lt"])
+
+
+class TestBasicAuthIdentity(unittest.TestCase):
+    """Basic 凭据必须作用于当次请求。
+
+    OPDS 阅读器（静读天下等）不会回传上一轮 401 下发的 cookie，只靠 login_user
+    种 cookie 会让每次请求都仍是匿名；这里用真实 Tornado current_user 属性验证。
+    """
+
+    def setUp(self):
+        self._saved = {
+            k: CONF.get(k) for k in ("REQUIRE_LOGIN", "OPDS_ALLOW_ANONYMOUS")
+        }
+        _enable_modules(self)
+        CONF["REQUIRE_LOGIN"] = True
+        CONF["OPDS_ALLOW_ANONYMOUS"] = False
+        self.user = mock.Mock()
+        self.user.id = 7
+        self.user.username = "reader"
+        self.user.password = "stored-hash"
+        self.user.active = True
+        self.user.extra = {}
+        self.user.get_secure_password.return_value = "stored-hash"
+
+    def tearDown(self):
+        for key, value in self._saved.items():
+            CONF[key] = value
+
+    def test_opds_feed_request_is_authenticated_with_basic(self):
+        handler = _auth_handler(
+            _basic_auth_header("reader", "secret"), self.user, path="/opds/"
+        )
+        self.assertTrue(BaseHandler.process_auth_header(handler))
+        self.assertIs(handler.current_user, self.user)
+        self.assertFalse(handler.should_be_logged_in())
+        self.assertEqual(handler.written, [])
+
+    def test_opds_download_request_is_authenticated_with_basic(self):
+        handler = _auth_handler(
+            _basic_auth_header("reader", "secret"),
+            self.user,
+            path="/api/book/12.epub",
+            from_opds=True,
+        )
+        self.assertTrue(BaseHandler.process_auth_header(handler))
+        self.assertIs(handler.current_user, self.user)
+        self.assertFalse(handler.should_be_logged_in())
+
+    def test_wrong_password_stays_anonymous(self):
+        self.user.get_secure_password.return_value = "different"
+        handler = _auth_handler(
+            _basic_auth_header("reader", "wrong"), self.user, path="/opds/"
+        )
+        self.assertFalse(BaseHandler.process_auth_header(handler))
+        self.assertIsNone(handler.current_user)
+        with self.assertRaises(web.Finish):
+            handler.should_be_logged_in()
+        self.assertEqual(handler.status, 401)
+        self.assertTrue(handler.headers.get("WWW-Authenticate", "").startswith("Basic "))
 
 
 class TestShareGrantedReaderTools(unittest.TestCase):

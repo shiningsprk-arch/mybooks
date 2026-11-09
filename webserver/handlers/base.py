@@ -529,6 +529,8 @@ class BaseHandler(web.RequestHandler):
             return False
         self.mark_invited()
         self.login_user(user)
+        # login_user 只写响应 cookie；OPDS 等 Basic 客户端不回传 cookie，身份必须作用于当次请求。
+        self.current_user = user
         return True
 
     TOKEN_LOGIN_SAVE_INTERVAL = 300
